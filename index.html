@@ -279,6 +279,22 @@ async function scheduleBoss(b){
  finally{inflight.delete(b)}
  if(n){save();renderBoss()}
  return n}
+// 입장 시각 직접 수정 (입장 버튼을 깜빡하고 못 눌렀을 때)
+let editI=-1;
+const toLocalInput=ms=>{const d=new Date(ms);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
+function editTime(i){editI=editI===i?-1:i;renderBoss()}
+function cancelEdit(){editI=-1;renderBoss()}
+function etAgo(m){$('etIn').value=toLocalInput(Date.now()-m*60000)}
+async function saveTime(i){
+ const b=S.boss[i],t=new Date($('etIn').value).getTime();
+ if(!t||isNaN(t)){alert('시각을 입력해 주세요');return}
+ if(t>Date.now()+60000){alert('미래 시각은 입력할 수 없어요');return}
+ editI=-1;cancelPush(b);b.killed=t;save();renderBoss();
+ const ready=t+b.hours*3600000;
+ if(ready<=Date.now()){nMsg('✏ '+b.name+' 입장 시각을 고쳤어요. 쿨타임이 이미 끝났어요.');return}
+ if(b.noal||!leadsOf(b).length){nMsg('✏ '+b.name+' 입장 시각을 고쳤어요.');return}
+ const n=await scheduleBoss(b);
+ nMsg(n?'✏ 입장 시각을 고치고 알림 '+n+'개를 다시 예약했어요':'✏ 입장 시각을 고쳤어요. 알림은 시각이 3일 안으로 들어온 뒤 사이트를 열면 예약돼요.')}
 function toggleAl(i){const b=S.boss[i];if(b.noal){b.noal=false;save();renderBoss();scheduleDue()}else{b.noal=true;cancelPush(b);save();renderBoss()}}
 function resetBoss(i){const b=S.boss[i];cancelPush(b);b.killed=0;save();renderBoss()}
 function delBoss(i){resetBoss(i);S.boss.splice(i,1);save();renderBoss()}
@@ -300,9 +316,14 @@ function renderBoss(){
   const at=b.killed?'<div class="small">가능 시각: '+new Date(ready).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})+(b.noal?' · 🔕 알림 꺼짐':(()=>{const k=leadsOf(b).length,p=Object.keys(b.pids||{}).length;return left>0&&k?(p?' · 📱예약됨 '+p+(p<k?'/'+k:'')+'개':' · 📱예약 대기'):''})())+'</div>':'';
   return `<div class="chk" style="flex-wrap:wrap"><span style="min-width:120px"><b>${esc(b.name)}</b> <span class="small">(${durStr(b.hours)})</span>${at}</span>${st}
   <button class="b" onclick="killBoss(${i})">입장</button>
+  <button class="g" onclick="editTime(${i})" title="입장 시각을 직접 고치기">⏱ 시간 수정</button>
   ${b.killed&&!can?`<button class="g" onclick="window.open(calUrl(${i}),'_blank')" title="구글 캘린더에 추가">📅</button><button class="g" onclick="resetBoss(${i})">취소</button>`:''}
   <button class="g" onclick="toggleAl(${i})" title="이 보스의 폰 알림 켜기/끄기">${b.noal?'🔕 알림 꺼짐':'🔔 알림 켜짐'}</button>
-  <button class="g" onclick="delBoss(${i})">삭제</button></div>`}).join(''):'<div class="small">위에서 보스를 추가하세요</div>';renderMain()}
+  <button class="g" onclick="delBoss(${i})">삭제</button>
+  ${editI===i?`<div style="width:100%;padding:10px;margin-top:4px;border:1px solid var(--line);border-radius:8px"><label for="etIn">입장한 시각 (깜빡하고 못 눌렀다면 실제 입장 시각으로)</label>
+   <input type="datetime-local" id="etIn" value="${toLocalInput(b.killed||Date.now())}" max="${toLocalInput(Date.now())}">
+   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="g" onclick="etAgo(10)">10분 전</button><button class="g" onclick="etAgo(30)">30분 전</button><button class="g" onclick="etAgo(60)">1시간 전</button><button class="g" onclick="etAgo(180)">3시간 전</button></div>
+   <div style="display:flex;gap:6px;margin-top:8px"><button class="b" onclick="saveTime(${i})">저장</button><button class="g" onclick="cancelEdit()">취소</button></div></div>`:''}</div>`}).join(''):'<div class="small">위에서 보스를 추가하세요</div>';renderMain()}
 function renderMain(){
  const now=Date.now();
  $('mAll').innerHTML=S.chars.map(c=>{
@@ -320,7 +341,7 @@ function renderMain(){
 function calUrl(i){
  const b=S.boss[i],end=b.killed+b.hours*3600000,z=t=>new Date(t).toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(charName(b.cid)+' · '+b.name+' 쿨타임 종료')+'&dates='+z(end)+'/'+z(end+600000)}
-setInterval(()=>{if(($('t-boss').classList.contains('on')||$('t-main').classList.contains('on'))&&S.boss.some(b=>b.killed))renderBoss()},1000);
+setInterval(()=>{if(editI<0&&($('t-boss').classList.contains('on')||$('t-main').classList.contains('on'))&&S.boss.some(b=>b.killed))renderBoss()},1000);
 renderBoss();
 
 autoReset();renderChars();renderHw();scheduleDue();
