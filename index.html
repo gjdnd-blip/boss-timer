@@ -284,7 +284,8 @@ let editI=-1;
 const toLocalInput=ms=>{const d=new Date(ms);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
 function editTime(i){editI=editI===i?-1:i;renderBoss()}
 function cancelEdit(){editI=-1;renderBoss()}
-function etAgo(m){$('etIn').value=toLocalInput(Date.now()-m*60000)}
+function etAdj(m){const el=$('etIn');let t=new Date(el.value).getTime();if(!t||isNaN(t))t=Date.now();
+ el.value=toLocalInput(Math.min(t+m*60000,Date.now()))}
 async function saveTime(i){
  const b=S.boss[i],t=new Date($('etIn').value).getTime();
  if(!t||isNaN(t)){alert('시각을 입력해 주세요');return}
@@ -322,7 +323,9 @@ function renderBoss(){
   <button class="g" onclick="delBoss(${i})">삭제</button>
   ${editI===i?`<div style="width:100%;padding:10px;margin-top:4px;border:1px solid var(--line);border-radius:8px"><label for="etIn">입장한 시각 (깜빡하고 못 눌렀다면 실제 입장 시각으로)</label>
    <input type="datetime-local" id="etIn" value="${toLocalInput(b.killed||Date.now())}" max="${toLocalInput(Date.now())}">
-   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="g" onclick="etAgo(10)">10분 전</button><button class="g" onclick="etAgo(30)">30분 전</button><button class="g" onclick="etAgo(60)">1시간 전</button><button class="g" onclick="etAgo(180)">3시간 전</button></div>
+   <div class="small" style="margin-top:8px">누를 때마다 위 시각이 그만큼 움직여요 (여러 번 눌러 미세 조정)</div>
+   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${[[1,'1분'],[5,'5분'],[10,'10분'],[30,'30분'],[60,'1시간']].map(([m,n])=>`<button class="g" onclick="etAdj(-${m})">${n} 전</button>`).join('')}</div>
+   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${[[1,'1분'],[5,'5분'],[10,'10분'],[30,'30분'],[60,'1시간']].map(([m,n])=>`<button class="g" onclick="etAdj(${m})">${n} 후</button>`).join('')}</div>
    <div style="display:flex;gap:6px;margin-top:8px"><button class="b" onclick="saveTime(${i})">저장</button><button class="g" onclick="cancelEdit()">취소</button></div></div>`:''}</div>`}).join(''):'<div class="small">위에서 보스를 추가하세요</div>';renderMain()}
 function renderMain(){
  const now=Date.now();
