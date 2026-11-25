@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>메이플랜드 보스타이머</title>
+<style>
+:root{--bg:#14161f;--card:#1e2130;--line:#2e3350;--tx:#e8eaf3;--sub:#8a90ad;--ac:#ff9f43;--ok:#4cd187;--bad:#ff6b6b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Malgun Gothic",system-ui,sans-serif}
+header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+h1{font-size:18px;margin:0;color:var(--ac)}
+nav{display:flex;gap:4px;padding:10px 20px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+nav button{background:none;border:1px solid var(--line);color:var(--sub);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:14px}
+nav button.on{background:var(--ac);color:#000;border-color:var(--ac);font-weight:bold}
+main{max-width:900px;margin:0 auto;padding:20px}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+h2{font-size:16px;margin:0 0 12px}
+label{display:block;font-size:12px;color:var(--sub);margin-bottom:4px}
+input,select{background:#12141d;border:1px solid var(--line);color:var(--tx);padding:8px 10px;border-radius:8px;font-size:14px;width:100%}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:10px}
+button.b{background:var(--ac);color:#000;border:0;padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:bold}
+button.g{background:none;border:1px solid var(--line);color:var(--sub);padding:6px 10px;border-radius:8px;cursor:pointer}
+.res{font-size:20px;font-weight:bold;color:var(--ac)}
+.small{font-size:12px;color:var(--sub)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--sub);font-weight:normal;font-size:12px}
+.chk{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.chk input{width:auto}
+.chk.done span{text-decoration:line-through;color:var(--sub)}
+.chk span{flex:1}
+.flex{display:flex;gap:8px;align-items:end}
+.flex>div{flex:1}
+.timer{font-size:28px;font-variant-numeric:tabular-nums}
+.up{color:var(--ok)}.down{color:var(--bad)}
+</style>
+</head>
+<body>
+<header><h1>🍁 메이플랜드 보스타이머</h1>
+<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+<span class="small">캐릭터</span><select id="cSel" onchange="selChar()" style="width:auto;min-width:120px"></select>
+<button class="g" onclick="addChar()" title="캐릭터 추가">＋</button><button class="g" onclick="renameChar()">이름변경</button><button class="g" onclick="delChar()">삭제</button>
+<span style="width:1px;height:22px;background:var(--line)"></span>
+<button class="g" onclick="exportData()">백업(내보내기)</button> <button class="g" onclick="document.getElementById('imp').click()">불러오기</button><input type="file" id="imp" hidden accept=".json" onchange="importData(event)"></div></header>
+<nav id="nav"></nav>
+<main>
+
+<section id="t-main">
+ <div id="mAll"></div>
+</section>
+
+<section id="t-boss">
+ <div class="card"><h2>보스 쿨타임</h2>
+  <div class="flex" style="margin-bottom:12px">
+   <div><label>보스 이름</label><input id="bName" placeholder="예: 자쿰"></div>
+   <div style="max-width:110px"><label>쿨타임(시간)</label><input id="bHours" type="number" value="24" step="0.5"></div>
+   <button class="b" onclick="addBoss()">보스 추가</button>
+  </div>
+  <div class="small">쿨타임은 게임에서 확인한 값을 직접 입력하세요. 보스를 잡은 직후 "잡았다" 버튼을 누르세요.</div>
+ </div>
+ <div class="card"><div id="bList"></div></div>
+ <div class="card"><h2>📱 휴대폰 알림 설정</h2>
+  <ol class="small" style="line-height:1.8;padding-left:18px;margin-top:0">
+   <li>휴대폰에 <b>ntfy</b> 앱 설치 (무료, 안드로이드/아이폰)</li>
+   <li>앱에서 + 눌러 아래 <b>채널 이름</b>을 구독</li>
+   <li>이 페이지에서 "잡았다"를 누르면 쿨타임 종료 시각에 알림이 예약돼요 (최대 3일)</li>
+  </ol>
+  <div class="row">
+   <div><label>채널 이름 (남이 추측 못 하게 길게)</label><input id="nTopic" placeholder="자동 생성됨"></div>
+   <div><label>몇 분 전에 알림?</label><input id="nBefore" type="number" value="5" min="0"></div>
+  </div>
+  <button class="g" onclick="testPush()">테스트 알림 보내기</button>
+  <div class="small" style="margin-top:8px">⚠ 알림 예약 시 보스 이름과 시각이 ntfy.sh 서버로 전송돼요. 채널 이름을 아는 사람은 알림을 볼 수 있으니 공유하지 마세요.</div>
+  <div class="small" id="nMsg" style="margin-top:6px"></div>
+ </div>
+</section>
+
+<section id="t-daily">
+ <div class="card"><h2>숙제 체크리스트</h2>
+  <div class="small" id="resetInfo" style="margin-bottom:8px"></div>
+  <div class="flex" style="margin-bottom:12px">
+   <div><label>숙제 이름</label><input id="hwName" placeholder="예: 일일 퀘스트"></div>
+   <div style="max-width:120px"><label>주기</label><select id="hwType"><option value="daily">매일</option><option value="weekly">매주</option></select></div>
+   <button class="b" onclick="addHw()">추가</button>
+  </div>
+  <div class="flex" style="margin-bottom:12px"><div style="max-width:200px"><label>주간 초기화 요일</label>
+   <select id="weekDay" onchange="setWeekDay()"><option value="1">월</option><option value="2">화</option><option value="3">수</option><option value="4">목</option><option value="5">금</option><option value="6">토</option><option value="0">일</option></select></div></div>
+  <h2 style="margin-top:16px">매일</h2><div id="hwDaily"></div>
+  <h2 style="margin-top:16px">매주</h2><div id="hwWeekly"></div>
+ </div>
+</section>
+
+</main>
+<script>
+const TABS=[['main','메인'],['boss','보스 쿨타임'],['daily','숙제']];
+const KEY='mapleland-utils';
+let S={hw:[],hunt:[],price:[],weekDay:1,memo:'',lastDaily:'',lastWeekly:''};
+try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.round(n).toLocaleString('ko-KR');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+
+// tabs
+$('nav').innerHTML=TABS.map(([k,n])=>`<button data-k="${k}" onclick="show('${k}')">${n}</button>`).join('');
+function show(k){document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='t-'+k));
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+ try{localStorage.setItem(KEY+'-tab',k)}catch(e){}}
+let t0='main';try{t0=localStorage.getItem(KEY+'-tab')||'main'}catch(e){}
+show(TABS.some(t=>t[0]===t0)?t0:'main');
+
+// 숙제
+function weekStamp(){const d=new Date();const diff=(d.getDay()-S.weekDay+7)%7;d.setDate(d.getDate()-diff);
+ return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+function autoReset(){
+ if(S.lastDaily!==today()){S.hw.filter(h=>h.type==='daily').forEach(h=>h.done=false);S.lastDaily=today()}
+ if(S.lastWeekly!==weekStamp()){S.hw.filter(h=>h.type==='weekly').forEach(h=>h.done=false);S.lastWeekly=weekStamp()}
+ save()}
+function renderHw(){
+ const days='일월화수목금토';
+ $('resetInfo').textContent=`매일 자정 초기화 / 매주 ${days[S.weekDay]}요일 초기화`;
+ $('weekDay').value=S.weekDay;
+ ['daily','weekly'].forEach(t=>{
+  const l=S.hw.map((h,i)=>({h,i})).filter(x=>x.h.type===t&&x.h.cid===S.curChar);
+  $(t==='daily'?'hwDaily':'hwWeekly').innerHTML=l.length?l.map(({h,i})=>
+   `<div class="chk ${h.done?'done':''}"><input type="checkbox" ${h.done?'checked':''} onchange="toggleHw(${i})"><span>${esc(h.name)}</span><button class="g" onclick="delHw(${i})">삭제</button></div>`).join(''):'<div class="small">없음</div>'});renderMain()}
+function addHw(){const n=$('hwName').value.trim();if(!n)return;S.hw.push({name:n,type:$('hwType').value,done:false,cid:S.curChar});$('hwName').value='';save();renderHw()}
+function toggleHw(i){S.hw[i].done=!S.hw[i].done;save();renderHw()}
+function delHw(i){S.hw.splice(i,1);save();renderHw()}
+function setWeekDay(){S.weekDay=+$('weekDay').value;S.lastWeekly='';autoReset();renderHw()}
+
+// 백업
+function exportData(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));a.download='mapleland-backup-'+today()+'.json';a.click()}
+function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(typeof d!=='object'||!d)throw 0;Object.assign(S,d);save();location.reload()}catch(x){alert('올바른 백업 파일이 아니에요')}};r.readAsText(f)}
+
+// 보스 쿨타임
+if(!S.boss)S.boss=[];
+if(!S.chars||!S.chars.length){S.chars=[{id:'c1',name:'캐릭터1'}];S.curChar='c1'}
+if(!S.chars.some(c=>c.id===S.curChar))S.curChar=S.chars[0].id;
+S.boss.forEach(b=>{if(!b.cid)b.cid=S.chars[0].id});S.hw.forEach(h=>{if(!h.cid)h.cid=S.chars[0].id});save();
+function refresh(){renderChars();renderBoss();renderHw()}
+const charName=id=>(S.chars.find(c=>c.id===id)||{name:''}).name;
+function renderChars(){$('cSel').innerHTML=S.chars.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');$('cSel').value=S.curChar}
+function selChar(){S.curChar=$('cSel').value;save();refresh()}
+function addChar(){const n=(prompt('새 캐릭터 이름')||'').trim();if(!n)return;
+ const id='c'+Date.now();S.chars.push({id,name:n});
+ if((S.boss.some(b=>b.cid===S.curChar)||S.hw.some(h=>h.cid===S.curChar))&&confirm('현재 캐릭터의 보스 목록과 숙제 목록을 복사할까요? (잡은 기록·체크는 비워져요)')){
+  S.boss.filter(b=>b.cid===S.curChar).forEach(b=>S.boss.push({name:b.name,hours:b.hours,killed:0,pid:null,cid:id}));
+  S.hw.filter(h=>h.cid===S.curChar).forEach(h=>S.hw.push({name:h.name,type:h.type,done:false,cid:id}))}
+ S.curChar=id;save();refresh()}
+function renameChar(){const c=S.chars.find(c=>c.id===S.curChar),n=(prompt('캐릭터 이름 변경',c.name)||'').trim();if(!n)return;c.name=n;save();refresh()}
+function delChar(){if(S.chars.length<2){alert('캐릭터가 최소 1개는 있어야 해요');return}
+ const c=S.chars.find(c=>c.id===S.curChar);if(!confirm(`'${c.name}'와 이 캐릭터의 보스·숙제 기록을 모두 삭제할까요?`))return;
+ S.boss.filter(b=>b.cid===c.id&&b.pid).forEach(b=>fetch('https://ntfy.sh/'+S.ntfy.topic+'/'+b.pid,{method:'DELETE'}).catch(()=>{}));
+ S.boss=S.boss.filter(b=>b.cid!==c.id);S.hw=S.hw.filter(h=>h.cid!==c.id);S.chars=S.chars.filter(x=>x.id!==c.id);S.curChar=S.chars[0].id;save();refresh()}
+if(!S.ntfy){S.ntfy={topic:'maple-'+Array.from(crypto.getRandomValues(new Uint8Array(10)),b=>b.toString(36).padStart(2,'0')).join('').slice(0,16),before:5};save()}
+$('nTopic').value=S.ntfy.topic;$('nBefore').value=S.ntfy.before;
+$('nTopic').onchange=()=>{const v=$('nTopic').value.trim().replace(/[^A-Za-z0-9_-]/g,'');if(v){S.ntfy.topic=v}$('nTopic').value=S.ntfy.topic;save()};
+$('nBefore').onchange=()=>{S.ntfy.before=Math.max(0,+$('nBefore').value||0);save()};
+const nMsg=t=>{$('nMsg').textContent=t};
+async function push(title,message,atMs,id){
+ const body={topic:S.ntfy.topic,title,message,tags:['crossed_swords']};
+ if(atMs-Date.now()>15000)body.delay=String(Math.floor(atMs/1000));
+ const r=await fetch('https://ntfy.sh/',{method:'POST',body:JSON.stringify(body)});
+ if(!r.ok)throw new Error(r.status);
+ return (await r.json()).id}
+async function testPush(){try{await push('🍁 테스트','알림이 잘 오나요?',Date.now());nMsg('✅ 보냈어요. 휴대폰을 확인하세요.')}catch(e){nMsg('❌ 전송 실패 (인터넷 연결을 확인하세요)')}}
+function addBoss(){const n=$('bName').value.trim(),h=+$('bHours').value;if(!n||!(h>0))return;
+ S.boss.push({name:n,hours:h,killed:0,pid:null,cid:S.curChar});$('bName').value='';save();renderBoss()}
+async function killBoss(i){
+ const b=S.boss[i];b.killed=Date.now();const ready=b.killed+b.hours*3600000;
+ const old=b.pid;b.pid=null;save();renderBoss();
+ if(old){fetch('https://ntfy.sh/'+S.ntfy.topic+'/'+old,{method:'DELETE'}).catch(()=>{})}
+ const at=ready-S.ntfy.before*60000;
+ if(at-Date.now()>3*86400000-60000){nMsg('⚠ 쿨타임이 3일을 넘어 푸시 예약은 못 했어요. 📅 버튼으로 캘린더에 등록하세요.');return}
+ try{b.pid=await push('🍁 '+charName(b.cid)+' · '+b.name+' 쿨타임 종료','곧 '+charName(b.cid)+'의 '+b.name+' 재도전 가능'+(S.ntfy.before?' ('+S.ntfy.before+'분 후)':''),Math.max(at,Date.now()));save();nMsg('✅ '+b.name+' 알림 예약 완료')}
+ catch(e){nMsg('❌ 알림 예약 실패. 화면의 타이머는 정상 작동해요.')}}
+function resetBoss(i){const b=S.boss[i];if(b.pid)fetch('https://ntfy.sh/'+S.ntfy.topic+'/'+b.pid,{method:'DELETE'}).catch(()=>{});b.killed=0;b.pid=null;save();renderBoss()}
+function delBoss(i){resetBoss(i);S.boss.splice(i,1);save();renderBoss()}
+function leftStr(ms){const s=Math.ceil(ms/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),x=s%60;
+ return (d?d+'일 ':'')+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0')}
+function renderBoss(){
+ const L=S.boss.map((b,i)=>({b,i})).filter(x=>x.b.cid===S.curChar);
+ $('bList').innerHTML=L.length?L.map(({b,i})=>{
+  const ready=b.killed+b.hours*3600000,left=ready-Date.now(),can=!b.killed||left<=0;
+  const st=!b.killed?'<span class="small">기록 없음</span>':can?'<span class="up">✅ 도전 가능!</span>':'<span class="timer" style="font-size:18px">'+leftStr(left)+'</span>';
+  const at=b.killed?'<div class="small">가능 시각: '+new Date(ready).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})+(b.pid?' · 📱예약됨':'')+'</div>':'';
+  return `<div class="chk" style="flex-wrap:wrap"><span style="min-width:120px"><b>${esc(b.name)}</b> <span class="small">(${b.hours}시간)</span>${at}</span>${st}
+  <button class="b" onclick="killBoss(${i})">잡았다</button>
+  ${b.killed&&!can?`<button class="g" onclick="downloadIcs(${i})" title="캘린더 파일">📅</button><button class="g" onclick="resetBoss(${i})">취소</button>`:''}
+  <button class="g" onclick="delBoss(${i})">삭제</button></div>`}).join(''):'<div class="small">위에서 보스를 추가하세요</div>';renderMain()}
+function renderMain(){
+ const now=Date.now();
+ $('mAll').innerHTML=S.chars.map(c=>{
+  const mine=S.boss.map((b,i)=>({b,i})).filter(x=>x.b.cid===c.id);
+  const ready=mine.filter(({b})=>!b.killed||b.killed+b.hours*3600000<=now);
+  const wait=mine.filter(({b})=>b.killed&&b.killed+b.hours*3600000>now).sort((a,d)=>(a.b.killed+a.b.hours*3600000)-(d.b.killed+d.b.hours*3600000))[0];
+  const hw=S.hw.map((h,i)=>({h,i})).filter(x=>x.h.cid===c.id),done=hw.filter(x=>x.h.done).length;
+  const bossHtml=ready.length?ready.map(({b,i})=>`<div class="chk"><span><b>${esc(b.name)}</b> <span class="small">${b.killed?'(쿨타임 종료)':'(기록 없음)'}</span></span><button class="b" onclick="killBoss(${i})">잡았다</button></div>`).join(''):`<div class="small">${mine.length?'지금 잡을 수 있는 보스가 없어요 👍':'등록된 보스 없음'}</div>`;
+  const nextHtml=wait?`<div class="small" style="margin-top:6px">⏳ 다음: ${esc(wait.b.name)} · ${leftStr(wait.b.killed+wait.b.hours*3600000-now)} 후</div>`:'';
+  const sec=(t,title)=>{const l=hw.filter(x=>x.h.type===t);return l.length?`<div class="small" style="margin:8px 0 2px">${title}</div>`+l.map(({h,i})=>`<div class="chk ${h.done?'done':''}"><input type="checkbox" ${h.done?'checked':''} onchange="toggleHw(${i})"><span>${esc(h.name)}</span></div>`).join(''):''};
+  const hwHtml=hw.length?sec('daily','매일')+sec('weekly','매주'):'<div class="small">등록된 숙제 없음</div>';
+  return `<div class="card"><h2>🍁 ${esc(c.name)} <span class="small">${c.id===S.curChar?'· 선택됨 ':''}${hw.length?'· 숙제 '+done+'/'+hw.length:''}</span></h2>
+  <div class="small" style="margin-bottom:2px">⚔ 잡을 수 있는 보스</div>${bossHtml}${nextHtml}
+  <div class="small" style="margin-top:14px;margin-bottom:2px">📋 숙제</div>${hwHtml}</div>`}).join('')}
+function downloadIcs(i){
+ const b=S.boss[i],end=b.killed+b.hours*3600000,z=t=>new Date(t).toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
+ const bef=S.ntfy.before;
+ const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//mapleland-utils//KO','BEGIN:VEVENT','UID:'+b.killed+'-'+i+'@mapleland-utils','DTSTAMP:'+z(Date.now()),'DTSTART:'+z(end),'DTEND:'+z(end+600000),'SUMMARY:'+(charName(b.cid)+' '+b.name).replace(/[\\;,\r\n]/g,' ')+' 쿨타임 종료','BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:보스 쿨타임','TRIGGER:-PT'+bef+'M','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar;charset=utf-8'}));a.download='boss-'+i+'.ics';a.click()}
+setInterval(()=>{if(($('t-boss').classList.contains('on')||$('t-main').classList.contains('on'))&&S.boss.some(b=>b.killed))renderBoss()},1000);
+renderBoss();
+
+autoReset();renderChars();renderHw();
+</script>
+</body>
+</html>
