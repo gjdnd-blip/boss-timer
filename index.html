@@ -173,10 +173,8 @@ if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.
 (()=>{let z=1;try{z=parseFloat(localStorage.getItem(KEY+'-fz'))||1}catch(e){}setFz(z)})();
 $('nav').innerHTML=TABS.map(([k,n])=>`<button data-k="${k}" onclick="show('${k}')">${n}</button>`).join('');
 function show(k){document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='t-'+k));
- document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
- try{localStorage.setItem(KEY+'-tab',k)}catch(e){}}
-let t0='main';try{t0=localStorage.getItem(KEY+'-tab')||'main'}catch(e){}
-show(TABS.some(t=>t[0]===t0)?t0:'main');
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.k===k))}
+show('main'); // 열 때는 항상 메인 탭부터
 
 // 숙제
 function weekStamp(){const d=new Date();const diff=(d.getDay()-S.weekDay+7)%7;d.setDate(d.getDate()-diff);
