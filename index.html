@@ -240,6 +240,8 @@ label.gck{display:flex;align-items:center;gap:8px;margin:10px 0 0;color:var(--tx
 
 <section id="t-gear">
  <div class="card"><h2>⚙ 장비 효율 계산기</h2>
+  <div style="margin-bottom:12px"><label for="gChar">캐릭터</label><select id="gChar" onchange="gCharSel(this.value)"></select>
+   <div class="small" style="margin-top:4px">캐릭터마다 입력값이 따로 저장돼요. 위쪽 캐릭터 선택과 같이 움직여요.</div></div>
   <div class="small" style="margin-bottom:12px;line-height:1.7">"스탯 : 공격력" 비율로 모든 능력치를 <b>환산 스탯</b>(스탯 + 공격력 × 비율)으로 통일해서, 부위별 다음 업그레이드의 <b>스탯 1당 비용</b>이 낮은(가성비 좋은) 순서로 보여줘요. 값을 입력하면 바로 계산돼요. 가격은 <code>1억</code>, <code>2500만</code>처럼 단위를 붙여 써도 돼요.</div>
   <div class="row" style="align-items:end">
    <div><label for="gRatio">스탯 : 공격력 비율 (공격력 1 = 스탯 몇?)</label><input id="gRatio" inputmode="decimal" oninput="gRatioIn(this)" onchange="gRatioFix(this)"></div>
@@ -358,20 +360,18 @@ if(!S.boss)S.boss=[];
 if(!S.chars||!S.chars.length){S.chars=[{id:'c1',name:'캐릭터1'}];S.curChar='c1'}
 if(!S.chars.some(c=>c.id===S.curChar))S.curChar=S.chars[0].id;
 S.boss.forEach(b=>{if(!b.cid)b.cid=S.chars[0].id});S.hw.forEach(h=>{if(!h.cid)h.cid=S.chars[0].id});save();
-function refresh(){renderChars();renderBoss();renderHw()}
+function refresh(){renderChars();renderBoss();renderHw();if($('t-gear').classList.contains('on'))renderGear()}
 const charName=id=>(S.chars.find(c=>c.id===id)||{name:''}).name;
 function renderChars(){$('cSel').innerHTML=S.chars.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');$('cSel').value=S.curChar}
 function selChar(){S.curChar=$('cSel').value;save();refresh()}
 function addChar(){const n=(prompt('새 캐릭터 이름')||'').trim();if(!n)return;
  const id='c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);S.chars.push({id,name:n});
- if((S.boss.some(b=>b.cid===S.curChar)||S.hw.some(h=>h.cid===S.curChar))&&confirm('현재 캐릭터의 보스 목록과 숙제 목록을 복사할까요? (잡은 기록·체크는 비워져요)')){
-  S.boss.filter(b=>b.cid===S.curChar).forEach(b=>S.boss.push({name:b.name,hours:b.hours,killed:0,pids:{},noal:!!b.noal,cid:id}));
-  S.hw.filter(h=>h.cid===S.curChar).forEach(h=>S.hw.push({name:h.name,type:h.type,done:false,cid:id}))}
  S.curChar=id;save();refresh()}
 function renameChar(){const c=S.chars.find(c=>c.id===S.curChar),n=(prompt('캐릭터 이름 변경',c.name)||'').trim();if(!n)return;c.name=n;save();refresh()}
 function delChar(){if(S.chars.length<2){alert('캐릭터가 최소 1개는 있어야 해요');return}
  const c=S.chars.find(c=>c.id===S.curChar);if(!confirm(`'${c.name}'와 이 캐릭터의 보스·숙제 기록을 모두 삭제할까요?`))return;
  S.boss.filter(b=>b.cid===c.id).forEach(cancelPush);
+ if(S.gear&&S.gear.byChar)delete S.gear.byChar[c.id];
  S.boss=S.boss.filter(b=>b.cid!==c.id);S.hw=S.hw.filter(h=>h.cid!==c.id);S.chars=S.chars.filter(x=>x.id!==c.id);S.curChar=S.chars[0].id;save();refresh()}
 if(!S.ntfy){S.ntfy={topic:'maple-'+Array.from(crypto.getRandomValues(new Uint8Array(10)),b=>b.toString(36).padStart(2,'0')).join('').slice(0,16),before:5};save()}
 $('nTopic').value=S.ntfy.topic;
@@ -760,8 +760,16 @@ if(loadBad)setTimeout(()=>alert('저장된 데이터에 문제가 있어 새로 
 // 데이터는 S.gear에 저장돼요 (백업/다른 탭 동기화에도 같이 들어가요)
 const G_PARTS=[['hat','모자'],['top','상의'],['bottom','하의'],['shoes','신발'],['gloves','장갑'],['cape','망토'],['pend1','펜던트1'],['pend2','펜던트2'],['ear','귀걸이'],['weapon','무기'],['belt','벨트'],['face','얼굴 장식'],['eye','눈 장식'],['x1','빈 슬롯 1'],['x2','빈 슬롯 2'],['x3','빈 슬롯 3'],['x4','빈 슬롯 4']];
 const G_F=['cs','ca','cp','ns','na','np'];
-function gearS(){let g=S.gear;
- if(!isObj(g))g=S.gear={};
+// S.gear = { byChar: { 캐릭터id: {ratio,deduct,suit,names,rows} } }  — 캐릭터마다 따로 저장해요
+function gearRoot(){let r=S.gear;
+ if(!isObj(r))r=S.gear={};
+ // 예전(캐릭터 구분 없던) 형식이면 지금 선택된 캐릭터의 데이터로 옮겨요
+ if(!('byChar' in r)&&(isObj(r.rows)||r.ratio!==undefined||r.suit!==undefined||isObj(r.names))){
+  S.gear=r={byChar:{[S.curChar]:{ratio:r.ratio,deduct:r.deduct,suit:r.suit,names:r.names,rows:r.rows}}}}
+ if(!isObj(r.byChar))r.byChar={};
+ return r}
+function gearS(){const root=gearRoot();let g=root.byChar[S.curChar];
+ if(!isObj(g))g=root.byChar[S.curChar]={};
  if(!Number.isFinite(g.ratio)||g.ratio<0)g.ratio=10;
  g.deduct=!!g.deduct;if(g.suit!=='one')g.suit='two';
  if(!isObj(g.names))g.names={};if(!isObj(g.rows))g.rows={};
@@ -799,8 +807,8 @@ function gUpdate(){
  const g=gearS(),{out,ranked}=gearCalc(g);
  out.forEach(x=>{const c=$('gr-'+x.k);if(c)c.innerHTML=gResText(x)});
  const best=ranked[0];
- $('gSum').innerHTML=best?`<div class="small">지금 가장 먼저 올릴 부위</div><div style="font-size:calc(22px*var(--fz));font-weight:bold;margin:4px 0"><span style="color:var(--ac)">${esc(best.label)}</span></div><div>스탯 1당 <b class="up">${gPer(best.per)}원</b> <span class="small">(공격력 1당 ${gPer(best.perAtk)}원)</span></div>`
-  :`<div class="small">지금 가장 먼저 올릴 부위</div><div style="margin-top:4px">부위별로 다음 업그레이드 값을 입력하면 추천이 나와요.</div>`;
+ $('gSum').innerHTML=best?`<div class="small">${esc(charLabel(S.curChar))} · 지금 가장 먼저 올릴 부위</div><div style="font-size:calc(22px*var(--fz));font-weight:bold;margin:4px 0"><span style="color:var(--ac)">${esc(best.label)}</span></div><div>스탯 1당 <b class="up">${gPer(best.per)}원</b> <span class="small">(공격력 1당 ${gPer(best.perAtk)}원)</span></div>`
+  :`<div class="small">${esc(charLabel(S.curChar))} · 지금 가장 먼저 올릴 부위</div><div style="margin-top:4px">부위별로 다음 업그레이드 값을 입력하면 추천이 나와요.</div>`;
  const mx=Math.max(...ranked.map(x=>x.per),0)||1;
  const notup=out.filter(x=>x.status==='notup');
  $('gRank').innerHTML=(ranked.length?`<div class="small" style="margin-bottom:8px">스탯 1당 비용이 낮은 순서예요. 막대가 짧을수록 가성비가 좋아요.</div>`+ranked.map((x,i)=>{
@@ -811,6 +819,7 @@ function gUpdate(){
   +(notup.length?`<div class="small" style="margin-top:6px">업그레이드가 아닌 부위(환산 스탯이 늘지 않음): ${notup.map(x=>esc(x.label)).join(', ')}</div>`:'')}
 function renderGear(){
  const g=gearS();
+ $('gChar').innerHTML=S.chars.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');$('gChar').value=S.curChar;
  $('gRatio').value=g.ratio;$('gDeduct').checked=g.deduct;
  $('gSuit').innerHTML=[['one','한벌옷'],['two','상의+하의']].map(([k,n])=>`<button class="g" style="${g.suit===k?'background:var(--ac);color:#000;border-color:var(--ac);font-weight:bold':''}" onclick="gSuitSet('${k}')">${n}</button>`).join('');
  const inp=(k,f,off)=>{const v=(g.rows[k]||{})[f];return `<td><input class="gi" inputmode="decimal" data-k="${k}" data-f="${f}" value="${v!==undefined?v.toLocaleString('ko-KR'):''}" oninput="gIn(this)" onchange="gChange(this)" ${off?'disabled':''} aria-label="${esc(gLabel(g,k))} ${f[0]==='c'?'현재':'다음'}"></td>`};
@@ -837,8 +846,10 @@ function gNameFix(el){const g=gearS();if(!el.value.trim()){delete g.names[el.dat
 function gApply(k){const r=gearS().rows[k];if(!r||(r.ns===undefined&&r.na===undefined&&r.np===undefined))return;
  [['ns','cs'],['na','ca'],['np','cp']].forEach(([n,c])=>{if(r[n]===undefined)delete r[c];else r[c]=r[n];delete r[n]});
  save();renderGear()}
-function gReset(){if(!confirm('장비 효율 계산기의 모든 입력과 빈 슬롯 이름을 처음 상태로 되돌릴까요?'))return;
- S.gear={};gearS();save();renderGear()}
+function gReset(){if(!confirm("'"+charLabel(S.curChar)+"' 캐릭터의 장비 효율 계산기 입력과 빈 슬롯 이름을 모두 처음 상태로 되돌릴까요? (다른 캐릭터는 그대로예요)"))return;
+ delete gearRoot().byChar[S.curChar];gearS();save();renderGear()}
+function gCharSel(v){if(!S.chars.some(c=>c.id===v))return;S.curChar=v;save();refresh()}
+gearRoot();save(); // 예전 형식 데이터가 있으면 사이트를 열 때 바로 캐릭터별 형식으로 옮겨요
 // 다른 탭/창에서 바뀐 데이터가 들어왔을 때 (이 탭이 열려 있으면) 다시 그려요
 function gSyncView(){if($('t-gear').classList.contains('on')&&JSON.stringify(S.gear)!==gLast)renderGear()}
 window.addEventListener('storage',gSyncView);window.addEventListener('focus',gSyncView);document.addEventListener('visibilitychange',gSyncView);
