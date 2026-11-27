@@ -327,6 +327,7 @@ function renderBoss(){
    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${[[1,'1분'],[5,'5분'],[10,'10분'],[30,'30분'],[60,'1시간']].map(([m,n])=>`<button class="g" onclick="etAdj(-${m})">${n} 전</button>`).join('')}</div>
    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${[[1,'1분'],[5,'5분'],[10,'10분'],[30,'30분'],[60,'1시간']].map(([m,n])=>`<button class="g" onclick="etAdj(${m})">${n} 후</button>`).join('')}</div>
    <div style="display:flex;gap:6px;margin-top:8px"><button class="b" onclick="saveTime(${i})">저장</button><button class="g" onclick="cancelEdit()">취소</button></div></div>`:''}</div>`}).join(''):'<div class="small">위에서 보스를 추가하세요</div>';renderMain()}
+const lastStr=ms=>{const d=new Date(ms);return (d.getMonth()+1)+'/'+d.getDate()+'('+'일월화수목금토'[d.getDay()]+') '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
 function renderMain(){
  const now=Date.now();
  $('mAll').innerHTML=S.chars.map(c=>{
@@ -334,8 +335,9 @@ function renderMain(){
   const ready=mine.filter(({b})=>!b.killed||b.killed+b.hours*3600000<=now);
   const wait=mine.filter(({b})=>b.killed&&b.killed+b.hours*3600000>now).sort((a,d)=>(a.b.killed+a.b.hours*3600000)-(d.b.killed+d.b.hours*3600000))[0];
   const hw=S.hw.map((h,i)=>({h,i})).filter(x=>x.h.cid===c.id),done=hw.filter(x=>x.h.done).length;
-  const bossHtml=ready.length?ready.map(({b,i})=>`<div class="chk"><span><b>${esc(b.name)}</b> <span class="small">${b.killed?'(쿨타임 종료)':'(기록 없음)'}</span></span><button class="b" onclick="killBoss(${i})">입장</button></div>`).join(''):`<div class="small">${mine.length?'지금 잡을 수 있는 보스가 없어요 👍':'등록된 보스 없음'}</div>`;
-  const nextHtml=wait?`<div class="small" style="margin-top:6px">⏳ 다음: ${esc(wait.b.name)} · ${leftStr(wait.b.killed+wait.b.hours*3600000-now)} 후</div>`:'';
+  const lastLine=b=>b.killed?`<div class="small" style="font-size:calc(11px*var(--fz))">마지막 입장 ${lastStr(b.killed)}</div>`:'';
+  const bossHtml=ready.length?ready.map(({b,i})=>`<div class="chk"><span><b>${esc(b.name)}</b> <span class="small">${b.killed?'(쿨타임 종료)':'(기록 없음)'}</span>${lastLine(b)}</span><button class="b" onclick="killBoss(${i})">입장</button></div>`).join(''):`<div class="small">${mine.length?'지금 잡을 수 있는 보스가 없어요 👍':'등록된 보스 없음'}</div>`;
+  const nextHtml=wait?`<div class="small" style="margin-top:6px">⏳ 다음: ${esc(wait.b.name)} · ${leftStr(wait.b.killed+wait.b.hours*3600000-now)} 후</div>${lastLine(wait.b)}`:'';
   const sec=(t,title)=>{const l=hw.filter(x=>x.h.type===t);return l.length?`<div class="small" style="margin:8px 0 2px">${title}</div>`+l.map(({h,i})=>`<div class="chk ${h.done?'done':''}"><input type="checkbox" ${h.done?'checked':''} onchange="toggleHw(${i})"><span>${esc(h.name)}</span></div>`).join(''):''};
   const hwHtml=hw.length?sec('daily','매일')+sec('weekly','매주'):'<div class="small">등록된 숙제 없음</div>';
   return `<div class="card"><h2>🍁 ${esc(c.name)} <span class="small">${c.id===S.curChar?'· 선택됨 ':''}${hw.length?'· 숙제 '+done+'/'+hw.length:''}</span></h2>
