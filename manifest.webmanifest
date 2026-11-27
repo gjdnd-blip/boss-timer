@@ -1,6 +1,6 @@
 {
-  "name": "메이플랜드 보스타이머",
-  "short_name": "보스타이머",
+  "name": "메랜 도우미",
+  "short_name": "메랜 도우미",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

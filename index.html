@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script>try{var z=parseFloat(localStorage.getItem('mapleland-utils-fz'));if(z>=0.8&&z<=2)document.documentElement.style.setProperty('--fz',z)}catch(e){}</script>
-<title>메이플랜드 보스타이머</title>
+<title>메랜 도우미</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#14161f">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="보스타이머">
+<meta name="apple-mobile-web-app-title" content="메랜 도우미">
 <style>
 :root{--bg:#14161f;--card:#1e2130;--line:#2e3350;--tx:#e8eaf3;--sub:#8a90ad;--ac:#ff9f43;--ok:#4cd187;--bad:#ff6b6b;--fz:1}
 *{box-sizing:border-box}
@@ -49,14 +49,77 @@ th{color:var(--sub);font-weight:normal;font-size:calc(12px*var(--fz))}
 .up{color:var(--ok)}.down{color:var(--bad)}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .cal .wd{text-align:center;color:var(--sub);font-size:calc(12px*var(--fz));padding:4px 0}
-.day{position:relative;aspect-ratio:1;background:#12141d;border:1px solid var(--line);border-radius:8px;color:var(--tx);cursor:pointer;padding:0;font-size:calc(14px*var(--fz))}
+.day{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;min-height:64px;background:#12141d;border:1px solid var(--line);border-radius:8px;color:var(--tx);cursor:pointer;padding:4px 1px;font-size:calc(14px*var(--fz));min-width:0;overflow:hidden}
 .day.td{border-color:var(--ac)}
 .day.sel{background:var(--ac);color:#000;font-weight:bold}
-.day i{position:absolute;right:3px;bottom:2px;font-style:normal;font-size:calc(10px*var(--fz));background:var(--ok);color:#000;border-radius:8px;padding:0 4px;min-width:14px;line-height:1.4}
+summary.fold{cursor:pointer;list-style:none;font-size:calc(16px*var(--fz));font-weight:bold;display:flex;align-items:center;gap:8px}
+summary.fold::-webkit-details-marker{display:none}
+summary.fold::before{content:"▶";font-size:.75em;color:var(--sub)}
+details[open]>summary.fold::before{content:"▼"}
+.dl{display:flex;align-items:center;gap:2px;font-size:calc(10px*var(--fz));line-height:1.2;white-space:nowrap}
+.dl b{width:7px;height:7px;border-radius:50%;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.55)}
+.dl u{text-decoration:none;font-weight:bold}
+.day.sel .dl u{color:#000}
+.dl.tot{margin-top:auto;padding-top:2px;border-top:1px solid var(--line);width:90%;justify-content:center;font-weight:bold}
+.day.sel .dl.tot{color:#000;border-top-color:rgba(0,0,0,.35)}
+.lg{display:flex;align-items:center;gap:8px;padding:6px 0;margin:0;font-size:calc(14px*var(--fz));color:var(--tx)}
+.lg input{width:30px;height:30px;padding:0;border:0;background:none;cursor:pointer}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:min(92vw,420px);background:var(--card);color:var(--tx);border:1px solid var(--ac);border-radius:10px;padding:10px 14px;font-size:calc(14px*var(--fz));box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:50}
+/* 장비 효율 계산기 */
+label.gck{display:flex;align-items:center;gap:8px;margin:10px 0 0;color:var(--tx);font-size:calc(14px*var(--fz));cursor:pointer}
+.gck input{width:auto}
+.gscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.gtbl{min-width:760px}
+.gtbl th,.gtbl td{padding:6px 3px;vertical-align:middle}
+.gtbl td button{white-space:nowrap}
+.gtbl th{text-align:center;font-size:calc(12px*var(--fz))}
+.gtbl td:first-child,.gtbl th:first-child{position:sticky;left:0;background:var(--card);z-index:1;min-width:96px}
+.gtbl input.gi{width:66px;padding:6px 5px;text-align:right}
+.gtbl input.gi[data-f=cp],.gtbl input.gi[data-f=np]{width:118px}
+.gtbl input.gname{width:100%;padding:4px 6px;background:none;border:1px dashed var(--line);font-weight:bold}
+.gtbl .gpart{font-weight:bold}
+.gtbl tr.off td{opacity:.35}
+.gtbl .gres{min-width:120px;white-space:nowrap;font-size:calc(12px*var(--fz));color:var(--sub)}
+.gk{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px;background:#12141d}
+.gk.r1{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac) inset;background:rgba(255,159,67,.08)}
+.gk.r2,.gk.r3{border-color:var(--ok)}
+.gk-h{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.gbadge{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:13px;background:var(--line);color:var(--tx);font-weight:bold;font-size:calc(13px*var(--fz));padding:0 8px}
+.gk.r1 .gbadge{background:var(--ac);color:#000}
+.gk.r2 .gbadge,.gk.r3 .gbadge{background:var(--ok);color:#000}
+.gk-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.gk-g label{margin:0}
+.gk-g b{font-size:calc(14px*var(--fz))}
+.gbar{height:10px;background:var(--bg);border-radius:5px;margin-top:8px;overflow:hidden}
+.gbar i{display:block;height:100%;border-radius:5px;background:var(--sub)}
+.gk.r1 .gbar i{background:var(--ok)}
+.gk.r2 .gbar i,.gk.r3 .gbar i{background:var(--ac)}
+.stg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.sc{background:#12141d;border:1px solid var(--line);border-radius:10px;padding:10px}
+.sc label{margin:0 0 2px}
+.sc b{font-size:calc(18px*var(--fz))}
+.br{display:flex;align-items:center;gap:8px;margin:5px 0}
+.br .d{width:74px;flex:none;font-size:calc(12px*var(--fz));color:var(--sub)}
+.br .v{width:64px;flex:none;text-align:right;font-size:calc(12px*var(--fz));font-weight:bold}
+.bw{position:relative;flex:1;height:14px;background:#12141d;border-radius:4px}
+.bw::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}
+.bw i{position:absolute;top:2px;bottom:2px;border-radius:3px}
+.sh{--s:8px;display:inline-block;flex:none;width:var(--s);height:var(--s);box-shadow:0 0 0 1px rgba(0,0,0,.55)}
+.sh-c{border-radius:50%}
+.sh-s{border-radius:1px}
+.sh-t,.sh-d,.sh-r{--s:11px;box-shadow:none}
+.sh-t{clip-path:polygon(50% 4%,100% 94%,0 94%)}
+.sh-d{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.sh-r{--s:12px;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+.sh.big{--s:11px;margin-right:6px}
+.sh.big.sh-t,.sh.big.sh-d{--s:14px}
+.sh.big.sh-r{--s:15px}
+.lg select{width:auto;padding:4px 6px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;box-shadow:0 0 0 1px rgba(0,0,0,.55)}
 </style>
 </head>
 <body>
-<header><h1>🍁 메이플랜드 보스타이머</h1>
+<header><h1>🍁 메랜 도우미</h1>
 <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
 <span class="small">캐릭터</span><select id="cSel" onchange="selChar()" style="width:auto;min-width:120px"></select>
 <button class="g" onclick="addChar()" title="캐릭터 추가">＋</button><button class="g" onclick="renameChar()">이름변경</button><button class="g" onclick="delChar()">삭제</button>
@@ -140,26 +203,79 @@ th{color:var(--sub);font-weight:normal;font-size:calc(12px*var(--fz))}
 </section>
 
 <section id="t-log">
- <div class="card"><h2>📅 보스 입장 기록</h2>
-  <div class="small" style="margin-bottom:10px">보스에 "입장"을 누르면 자동으로 기록돼요. 날짜를 누르면 그날의 기록을 볼 수 있어요.</div>
+ <div class="card"><h2>📅 기록</h2>
+  <div class="small" style="margin-bottom:10px">보스에 "입장"을 누르면 보스 기록이 자동으로 쌓여요. 사냥은 날짜를 누른 뒤 "사냥" 탭에서 직접 추가해요. 기록마다 수익·지출을 넣을 수 있고, 달력 동그라미 옆 숫자는 순수익이에요.</div>
+  <div style="margin-bottom:10px"><label for="logCharSel">캐릭터</label><select id="logCharSel" onchange="setLogChar(this.value)"></select></div>
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
    <button class="g" onclick="calMove(-1)" aria-label="이전 달">◀</button>
    <b id="calTitle"></b>
    <button class="g" onclick="calMove(1)" aria-label="다음 달">▶</button>
   </div>
   <div class="cal" id="calGrid"></div>
-  <div class="small" id="calSum" style="margin-top:8px"></div>
-  <div style="margin-top:6px"><button class="g" onclick="calToday()">오늘로</button></div>
+  <div style="margin-top:10px"><button class="g" onclick="calToday()">오늘로</button></div>
  </div>
- <div class="card"><h2 id="logDayTitle"></h2><div id="logList"></div></div>
+ <div class="card"><h2 id="logDayTitle"></h2>
+  <div class="presets" id="logTabs" style="margin:0 0 10px"></div>
+  <div id="huntForm" class="flex" style="margin-bottom:10px" hidden><div><label for="hName">사냥터 이름</label><input id="hName" list="hNames" placeholder="예: 사냥터A" onkeydown="if(event.key==='Enter')addHunt()"><datalist id="hNames"></datalist></div><button class="b" onclick="addHunt()">사냥 기록 추가</button></div>
+  <div id="logList"></div><div class="small" id="daySum" style="margin-top:10px;line-height:1.9"></div></div>
+ <div class="card"><details><summary class="fold">💊 포션 가격 세트</summary><div class="small" style="margin:10px 0 8px">자주 쓰는 포션 가격을 이름 붙여 저장해 두세요. 기록의 "사냥 전/후로 자동 계산"에서 세트를 고르면 가격이 한 번에 채워져요. 가격은 직접 입력하세요.</div><div id="setList"></div><button class="g" onclick="addSet()">＋ 세트 추가</button></details></div>
+ <div class="card"><details><summary class="fold">🎨 색깔 지정</summary><div class="small" style="margin:10px 0 6px">달력에 표시되는 색과 모양이에요. 색 칸을 눌러 색을, 옆의 선택칸에서 모양을 바꿀 수 있어요.</div><div id="logColors"></div></details></div>
+</section>
+
+<section id="t-stat">
+ <div class="card"><h2>📊 통계</h2>
+  <div class="small" style="margin-bottom:6px">기간</div>
+  <div class="presets" id="stPeriod" style="margin:0 0 10px"></div>
+  <div id="stCustom" class="flex" style="margin-bottom:10px" hidden>
+   <div><label for="stFrom">시작일</label><input type="date" id="stFrom" onchange="stFrom=this.value;renderStat()"></div>
+   <div><label for="stTo">종료일</label><input type="date" id="stTo" onchange="stTo=this.value;renderStat()"></div>
+  </div>
+  <div class="small" style="margin-bottom:6px">종류</div>
+  <div class="presets" id="stKind" style="margin:0 0 10px"></div>
+  <label for="stCharSel">캐릭터</label><select id="stCharSel" onchange="stC=this.value;renderStat()"></select>
+  <div class="small" id="stRange" style="margin-top:8px"></div>
+ </div>
+ <div id="stBody"></div>
+</section>
+
+<section id="t-gear">
+ <div class="card"><h2>⚙ 장비 효율 계산기</h2>
+  <div class="small" style="margin-bottom:12px;line-height:1.7">"스탯 : 공격력" 비율로 모든 능력치를 <b>환산 스탯</b>(스탯 + 공격력 × 비율)으로 통일해서, 부위별 다음 업그레이드의 <b>스탯 1당 비용</b>이 낮은(가성비 좋은) 순서로 보여줘요. 값을 입력하면 바로 계산돼요. 가격은 <code>1억</code>, <code>2500만</code>처럼 단위를 붙여 써도 돼요.</div>
+  <div class="row" style="align-items:end">
+   <div><label for="gRatio">스탯 : 공격력 비율 (공격력 1 = 스탯 몇?)</label><input id="gRatio" inputmode="decimal" oninput="gRatioIn(this)" onchange="gRatioFix(this)"></div>
+   <div><label>옷 종류</label><div class="presets" id="gSuit" style="margin:0"></div></div>
+  </div>
+  <label class="gck"><input type="checkbox" id="gDeduct" onchange="gDeductIn(this)">현재 장비 판매가를 비용에서 차감</label>
+  <div style="margin-top:12px"><button class="g" onclick="gReset()">전체 초기화</button></div>
+ </div>
+ <div class="card" id="gSum"></div>
+ <div class="card"><h2>부위별 입력</h2><div class="small" style="margin-bottom:8px">작은 화면에서는 표를 좌우로 밀어서 볼 수 있어요. "적용"을 누르면 다음 아이템 값이 현재 장비 칸으로 옮겨져요.</div>
+  <div class="gscroll"><table class="gtbl" id="gTbl"></table></div></div>
+ <div class="card"><h2>업그레이드 추천 순위</h2><div id="gRank"></div></div>
 </section>
 
 </main>
 <script>
-const TABS=[['main','메인'],['boss','보스 쿨타임'],['daily','숙제'],['log','기록']];
+const TABS=[['main','메인'],['boss','보스 쿨타임'],['daily','숙제'],['log','기록'],['stat','통계'],['gear','장비 효율 계산기']];
 const KEY='mapleland-utils';
 let S={hw:[],hunt:[],price:[],weekDay:1,memo:'',lastDaily:'',lastWeekly:''};
-try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+const isObj=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
+// 저장/불러온 데이터가 앱이 이해하는 모양인지 검사해요 (모양이 이상하면 사이트가 멈추므로)
+function validData(d){
+ if(!isObj(d))return false;
+ for(const k of ['boss','hw','chars','log','pset'])if(d[k]!==undefined&&!Array.isArray(d[k]))return false;
+ for(const k of ['bcol','bshp','ip','ntfy','alarm'])if(d[k]!==undefined&&!isObj(d[k]))return false;
+ if((d.boss||[]).some(b=>!isObj(b)||typeof b.name!=='string'))return false;
+ if((d.hw||[]).some(h=>!isObj(h)||typeof h.name!=='string'))return false;
+ if((d.chars||[]).some(c=>!isObj(c)||typeof c.id!=='string'||typeof c.name!=='string'))return false;
+ if((d.log||[]).some(e=>!isObj(e)||!Number.isFinite(e.t)||typeof e.name!=='string'))return false;
+ if((d.pset||[]).some(s=>!isObj(s)||typeof s.name!=='string'||!isObj(s.p)))return false;
+ return true}
+// 저장된 데이터가 손상됐으면 원본을 따로 보관한 뒤 새로 시작해요 (덮어써서 잃지 않도록)
+let loadBad=false,rawSaved=null;
+try{rawSaved=localStorage.getItem(KEY)}catch(e){}
+if(rawSaved){try{const d=JSON.parse(rawSaved);if(validData(d))Object.assign(S,d);else throw 0}
+ catch(e){loadBad=true;try{localStorage.setItem(KEY+'-corrupt',rawSaved)}catch(_){}}}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 const $=id=>document.getElementById(id);
 const fmt=n=>Math.round(n).toLocaleString('ko-KR');
@@ -194,7 +310,9 @@ if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.
 (()=>{let z=1;try{z=parseFloat(localStorage.getItem(KEY+'-fz'))||1}catch(e){}setFz(z)})();
 $('nav').innerHTML=TABS.map(([k,n])=>`<button data-k="${k}" onclick="show('${k}')">${n}</button>`).join('');
 function show(k){document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='t-'+k));
- document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.k===k))}
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+ if(k==='stat')renderStat();
+ if(k==='gear')renderGear()}
 show('main'); // 열 때는 항상 메인 탭부터
 
 // 숙제
@@ -217,9 +335,23 @@ function toggleHw(i){S.hw[i].done=!S.hw[i].done;save();renderHw()}
 function delHw(i){S.hw.splice(i,1);save();renderHw()}
 function setWeekDay(){S.weekDay=+$('weekDay').value;S.lastWeekly='';autoReset();renderHw()}
 
+// 잠깐 떴다 사라지는 안내
+let toastT=0;
+function toast(msg){let el=document.getElementById('toast');
+ if(!el){el=document.createElement('div');el.id='toast';el.setAttribute('role','status');document.body.appendChild(el)}
+ el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{el.hidden=true},3000)}
 // 백업
 function exportData(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));a.download='mapleland-backup-'+today()+'.json';a.click()}
-function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(typeof d!=='object'||!d)throw 0;Object.assign(S,d);save();location.reload()}catch(x){alert('올바른 백업 파일이 아니에요')}};r.readAsText(f)}
+function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();
+ r.onload=()=>{let d;try{d=JSON.parse(r.result)}catch(x){}
+  if(!validData(d)){alert('올바른 백업 파일이 아니에요. 현재 데이터는 그대로예요.');e.target.value='';return}
+  if(!confirm('현재 데이터가 이 백업 파일의 내용으로 바뀌어요. 계속할까요?\n(바뀌기 전 데이터는 이 브라우저에 따로 보관돼요)')){e.target.value='';return}
+  applyBackup(d);location.reload()};
+ r.readAsText(f)}
+// 백업 파일 내용으로 통째로 바꿔요 (섞이지 않게 현재 값은 모두 비우고 채워요). 바뀌기 전 데이터는 따로 보관해요.
+function applyBackup(d){
+ try{localStorage.setItem(KEY+'-before-import',JSON.stringify(S))}catch(x){}
+ Object.keys(S).forEach(k=>delete S[k]);Object.assign(S,d);save()}
 
 // 보스 쿨타임
 if(!S.boss)S.boss=[];
@@ -231,7 +363,7 @@ const charName=id=>(S.chars.find(c=>c.id===id)||{name:''}).name;
 function renderChars(){$('cSel').innerHTML=S.chars.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');$('cSel').value=S.curChar}
 function selChar(){S.curChar=$('cSel').value;save();refresh()}
 function addChar(){const n=(prompt('새 캐릭터 이름')||'').trim();if(!n)return;
- const id='c'+Date.now();S.chars.push({id,name:n});
+ const id='c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);S.chars.push({id,name:n});
  if((S.boss.some(b=>b.cid===S.curChar)||S.hw.some(h=>h.cid===S.curChar))&&confirm('현재 캐릭터의 보스 목록과 숙제 목록을 복사할까요? (잡은 기록·체크는 비워져요)')){
   S.boss.filter(b=>b.cid===S.curChar).forEach(b=>S.boss.push({name:b.name,hours:b.hours,killed:0,pids:{},noal:!!b.noal,cid:id}));
   S.hw.filter(h=>h.cid===S.curChar).forEach(h=>S.hw.push({name:h.name,type:h.type,done:false,cid:id}))}
@@ -281,7 +413,10 @@ function durStr(h){const d=Math.floor(h/24+1e-9),r=Math.round((h-d*24)*10)/10;re
 function addBoss(){const n=$('bName').value.trim(),h=+$('bHours').value;if(!n||!(h>0))return;
  S.boss.push({name:n,hours:h,killed:0,pids:{},noal:false,cid:S.curChar});$('bName').value='';save();renderBoss()}
 async function killBoss(i){
- const b=S.boss[i];cancelPush(b);b.killed=Date.now();save();renderBoss();addLog(b,b.killed);
+ const b=S.boss[i],now=Date.now();
+ if(b.killed&&now-b.killed<10000){toast('방금 입장을 기록했어요. 같은 보스는 10초 뒤에 다시 누를 수 있어요.');return} // 연속으로 눌러 기록이 두 번 쌓이는 것 방지
+ if(b.killed&&b.killed+b.hours*3600000>now&&!confirm('"'+b.name+'"은(는) 아직 쿨타임 중이에요.\n지금 다시 입장으로 기록할까요? (타이머가 새로 시작돼요)'))return;
+ cancelPush(b);b.killed=now;save();renderBoss();addLog(b,b.killed);
  if(b.noal){nMsg('🔕 '+b.name+'은(는) 알림을 끈 보스예요.');return}
  if(!leadsOf(b).length){nMsg('알림 시간이 설정돼 있지 않아요. ⚙ 환경설정에서 추가하세요.');return}
  const n=await scheduleBoss(b);
@@ -296,7 +431,12 @@ async function scheduleBoss(b){
  try{for(const lead of leadsOf(b)){
   const at=ready-lead;
   if(b.pids[lead]||at<now-60000||at-now>3*86400000-60000)continue;
-  try{b.pids[lead]=await push('🍁 '+charName(b.cid)+' · '+b.name+' 쿨타임 종료','곧 '+charName(b.cid)+'의 '+b.name+' 재도전 가능'+leadMsg(lead),Math.max(at,now));n++}catch(e){nMsg('❌ 알림 예약 실패. 화면의 타이머는 정상 작동해요.')}}}
+  try{const pid=await push('🍁 '+charName(b.cid)+' · '+b.name+' 쿨타임 종료','곧 '+charName(b.cid)+'의 '+b.name+' 재도전 가능'+leadMsg(lead),Math.max(at,now));
+   // 기다리는 동안 다른 탭의 데이터로 바뀌었을 수 있으니, 지금 데이터에서 같은 보스를 찾아 예약 번호를 기록해요
+   const cur=S.boss.find(x=>x===b)||S.boss.find(x=>x.cid===b.cid&&x.name===b.name&&x.killed===b.killed);
+   if(cur){(cur.pids||(cur.pids={}))[lead]=pid;n++}
+   else fetch('https://ntfy.sh/'+S.ntfy.topic+'/'+pid,{method:'DELETE'}).catch(()=>{})}
+  catch(e){nMsg('❌ 알림 예약 실패. 화면의 타이머는 정상 작동해요.')}}}
  finally{inflight.delete(b)}
  if(n){save();renderBoss()}
  return n}
@@ -329,7 +469,22 @@ async function scheduleDue(){
  let n=0;
  for(const b of S.boss)n+=await scheduleBoss(b);
  if(n)nMsg('✅ 쿨타임이 곧 끝나는 보스의 알림 '+n+'개를 예약했어요')}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleDue()});
+// 다른 탭/창(홈 화면 앱 포함)에서 저장한 최신 데이터를 가져와요. 오래된 화면이 새 데이터를 덮어쓰는 것을 막아요.
+function syncFromStorage(){
+ let raw=null;try{raw=localStorage.getItem(KEY)}catch(e){return}
+ if(!raw||raw===JSON.stringify(S))return;
+ let d;try{d=JSON.parse(raw)}catch(e){return}
+ if(!validData(d)||!d.ntfy||!d.alarm)return;
+ if(!d.boss)d.boss=[];if(!d.hw)d.hw=[];if(!d.chars||!d.chars.length)return;
+ if(!d.log)d.log=[];if(!d.pset)d.pset=[];if(!d.bcol)d.bcol={};if(!d.bshp)d.bshp={};if(!d.ip)d.ip={};
+ d.boss.forEach(b=>{if(!b.pids)b.pids={}});
+ if(!d.chars.some(c=>c.id===d.curChar))d.curChar=d.chars[0].id;
+ Object.keys(S).forEach(k=>delete S[k]);Object.assign(S,d);
+ editI=-1;$('nTopic').value=S.ntfy.topic;fillAlarm();refresh();renderLog();
+ if($('t-stat').classList.contains('on'))renderStat()}
+window.addEventListener('storage',e=>{if(e.key===KEY)syncFromStorage()});
+window.addEventListener('focus',syncFromStorage);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncFromStorage();scheduleDue()}});
 setInterval(scheduleDue,600000);
 function leftStr(ms){const s=Math.ceil(ms/1000),d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),x=s%60;
  return (d?d+'일 ':'')+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0')}
@@ -337,7 +492,7 @@ function renderBoss(){
  const L=S.boss.map((b,i)=>({b,i})).filter(x=>x.b.cid===S.curChar);
  $('bList').innerHTML=L.length?L.map(({b,i})=>{
   const ready=b.killed+b.hours*3600000,left=ready-Date.now(),can=!b.killed||left<=0;
-  const st=!b.killed?'<span class="small">기록 없음</span>':can?'<span class="up">✅ 도전 가능!</span>':'<span class="timer" style="font-size:calc(18px*var(--fz))">'+leftStr(left)+'</span>';
+  const st=!b.killed?'<span class="small">기록 없음</span>':can?'<span class="up">✅ 도전 가능!</span>':'<span class="timer" data-rdy="'+ready+'" style="font-size:calc(18px*var(--fz))">'+leftStr(left)+'</span>';
   const at=b.killed?'<div class="small">가능 시각: '+new Date(ready).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'})+(b.noal?' · 🔕 알림 꺼짐':(()=>{const k=leadsOf(b).length,p=Object.keys(b.pids||{}).length;return left>0&&k?(p?' · 📱예약됨 '+p+(p<k?'/'+k:'')+'개':' · 📱예약 대기'):''})())+'</div>':'';
   return `<div class="chk" style="flex-wrap:wrap"><span style="min-width:120px"><b>${esc(b.name)}</b> <span class="small">(${durStr(b.hours)})</span>${at}</span>${st}
   <button class="b" onclick="killBoss(${i})">입장</button>
@@ -356,25 +511,157 @@ if(!S.log)S.log=S.boss.filter(b=>b.killed).map(b=>({t:b.killed,cid:b.cid,name:b.
 let cal=new Date();cal.setDate(1);let calSel=today();
 const pad2=n=>String(n).padStart(2,'0');
 const dkey=ms=>{const d=new Date(ms);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())};
+// 보스별 색깔 (이름 기준, 처음 보는 보스는 자동 배정 / 직접 바꾸면 그 색 사용)
+if(!S.bcol)S.bcol={};
+const PALETTE=['#ff6b6b','#4cd187','#4da3ff','#ffd24d','#c77dff','#ff9f43','#2ec4b6','#ff7eb6','#9bdb4d','#8d99ae'];
+function colorOf(n){if(!S.bcol[n]){S.bcol[n]=PALETTE[Object.keys(S.bcol).length%PALETTE.length];save()}return S.bcol[n]}
+function setBcol(n,c){S.bcol[n]=c;save();renderLog()}
+// 모양: c 동그라미(기본), s 네모, t 세모, d 마름모, r 별
+if(!S.bshp)S.bshp={};
+const SHAPES=[['c','● 동그라미'],['s','■ 네모'],['t','▲ 세모'],['d','◆ 마름모'],['r','★ 별']];
+const shp=(n,big)=>`<i class="sh sh-${S.bshp[n]||'c'}${big?' big':''}" style="background:${colorOf(n)}"></i>`;
+function setBshp(n,v){S.bshp[n]=v;save();renderLog()}
+function renderColors(){
+ const names=[...new Set([...S.boss.map(b=>b.name),...S.log.map(e=>e.name)])];
+ $('logColors').innerHTML=names.length?names.map(n=>{const en=encodeURIComponent(n).replace(/'/g,'%27');
+  return `<label class="lg"><input type="color" value="${colorOf(n)}" aria-label="색" onchange="setBcol(decodeURIComponent('${en}'),this.value)"><select aria-label="모양" onchange="setBshp(decodeURIComponent('${en}'),this.value)">${SHAPES.map(([k,t])=>`<option value="${k}" ${(S.bshp[n]||'c')===k?'selected':''}>${t}</option>`).join('')}</select>${esc(n)}</label>`}).join(''):'<div class="small">등록된 항목이 없어요</div>'}
 function addLog(b,t){S.log.push({t,cid:b.cid,name:b.name});save();renderLog()}
 function calMove(n){cal.setMonth(cal.getMonth()+n);renderLog()}
 function calToday(){cal=new Date();cal.setDate(1);calSel=today();renderLog()}
 function calPick(k){calSel=k;renderLog()}
+// 기록 종류: 보스(입장 시 자동) / 사냥(직접 추가). S.log 항목의 kind가 'hunt'면 사냥, 없으면 보스
+// 캐릭터별 보기: 'all' 전체 / 캐릭터 id / '__del' 삭제된 캐릭터의 기록
+let logChar='all';
+const hasDelChar=()=>S.log.some(e=>!S.chars.some(c=>c.id===e.cid));
+const normChar=sel=>(sel==='all'||(sel==='__del'&&hasDelChar())||S.chars.some(c=>c.id===sel))?sel:'all';
+const charOk=(e,sel)=>sel==='all'||(sel==='__del'?!S.chars.some(c=>c.id===e.cid):e.cid===sel);
+const lcOk=e=>charOk(e,logChar);
+const charLabel=cid=>charName(cid)||'삭제된 캐릭터';
+function fillCharSel(el,cur){el.innerHTML='<option value="all">전체 캐릭터</option>'+S.chars.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')+(hasDelChar()?'<option value="__del">삭제된 캐릭터</option>':'');el.value=cur}
+function setLogChar(v){logChar=v;renderLog()}
+let logTab='boss';
+const kindOf=e=>e.kind||'boss';
+function setLogTab(k){logTab=k;renderLog()}
+function addHunt(){const n=$('hName').value.trim();if(!n){$('hName').focus();return}
+ const [y,m,d]=calSel.split('-').map(Number),now=new Date();
+ S.log.push({t:new Date(y,m-1,d,now.getHours(),now.getMinutes()).getTime(),cid:(logChar!=='all'&&logChar!=='__del')?logChar:S.curChar,name:n,kind:'hunt'});
+ $('hName').value='';save();renderLog()}
 function delLog(i){if(!confirm('이 기록을 삭제할까요?'))return;S.log.splice(i,1);save();renderLog()}
-function renderLog(){
+function renderCal(){
  const y=cal.getFullYear(),m=cal.getMonth(),first=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate();
- const cnt={};let total=0;S.log.forEach(e=>{const k=dkey(e.t);cnt[k]=(cnt[k]||0)+1;if(k.startsWith(y+'-'+pad2(m+1)+'-'))total++});
+ // 날짜별로 보스마다 순수익 합계를 모아요 (금액을 입력한 기록만 합산)
+ logChar=normChar(logChar);
+ const byDay={};S.log.filter(lcOk).sort((a,b)=>a.t-b.t).forEach(e=>{const k=dkey(e.t);const g=(byDay[k]=byDay[k]||new Map());const o=g.get(e.name)||{net:0,has:false};
+  if(e.inc!=null||e.exp!=null){o.net+=(e.inc||0)-(e.exp||0);o.has=true}g.set(e.name,o)});
  const days='일월화수목금토';
  let h=[...days].map(d=>`<div class="wd">${d}</div>`).join('');
  for(let i=0;i<first;i++)h+='<div></div>';
  for(let d=1;d<=dim;d++){const k=y+'-'+pad2(m+1)+'-'+pad2(d);
-  h+=`<button class="day ${k===today()?'td':''} ${k===calSel?'sel':''}" onclick="calPick('${k}')"><span>${d}</span>${cnt[k]?`<i>${cnt[k]}</i>`:''}</button>`}
- $('calGrid').innerHTML=h;$('calTitle').textContent=y+'년 '+(m+1)+'월';
- $('calSum').textContent=total?'이 달 입장 '+total+'회':'이 달 기록 없음';
- const [yy,mm,dd]=calSel.split('-').map(Number);
+  const rows=byDay[k]?[...byDay[k]]:[];
+  const lines=rows.slice(0,4).map(([n,o])=>`<div class="dl">${shp(n)}${o.has?`<u class="${o.net<0?'down':'up'}">${fmtM(o.net)}</u>`:''}</div>`).join('')+(rows.length>4?`<div class="dl">+${rows.length-4}</div>`:'');
+  const withNet=rows.filter(([,o])=>o.has),tot=withNet.reduce((s,[,o])=>s+o.net,0);
+  const sum=withNet.length?`<div class="dl tot ${tot<0?'down':'up'}">${fmtM(tot)}</div>`:'';
+  h+=`<button class="day ${k===today()?'td':''} ${k===calSel?'sel':''}" onclick="calPick('${k}')" aria-label="${m+1}월 ${d}일${rows.length?' 기록 '+rows.length+'건':''}" aria-pressed="${k===calSel}"><span>${d}</span>${lines}${sum}</button>`}
+ $('calGrid').innerHTML=h;$('calTitle').textContent=y+'년 '+(m+1)+'월'}
+// 금액 입력: "150만", "1.2억", "1,500,000" 모두 가능 / 빈칸이면 지움(undefined), 이상한 글자면 null
+function parseMoney(s){s=String(s).replace(/[,\s]/g,'');if(!s)return undefined;
+ const re=/(\d+(?:\.\d+)?)(억|만|천)?/y,mul={'억':1e8,'만':1e4,'천':1e3,'':1};let t=0,idx=0;
+ while(idx<s.length){re.lastIndex=idx;const m=re.exec(s);if(!m)return null;t+=parseFloat(m[1])*mul[m[2]||''];idx=re.lastIndex}
+ t=Math.round(t);return (Number.isFinite(t)&&t<=9e15)?t:null}
+function fmtM(n){const a=Math.abs(n),sg=n<0?'-':'';
+ const t=x=>String(Math.round(x*10)/10);
+ if(!isFinite(a))return '-';
+ // 반올림하면 단위가 넘어가는 경계(예: 99,999,999 → 10000만)는 위 단위로 표시해요
+ const man=Math.round(a/1e3)/10,eok=Math.round(a/1e7)/10;
+ return sg+(eok>=10000?t(a/1e12)+'조':a>=1e8||man>=10000?t(a/1e8)+'억':a>=1e4?t(a/1e4)+'만':a.toLocaleString('ko-KR'))}
+const netOf=e=>(e.inc!=null||e.exp!=null)?(e.inc||0)-(e.exp||0):null;
+function netHtml(e){const n=netOf(e);return n==null?'<span class="small">-</span>':`<b class="${n<0?'down':'up'}">${fmtM(n)}</b>`}
+function setMoney(i,f,el){const e=S.log[i],v=parseMoney(el.value);
+ if(v===null){alert('금액을 숫자로 입력해 주세요 (예: 150만, 1.2억, 1500000)');el.value=e[f]!=null?e[f].toLocaleString('ko-KR'):'';return}
+ if(v===undefined)delete e[f];else e[f]=v;
+ el.value=e[f]!=null?e[f].toLocaleString('ko-KR'):'';
+ save();$('net'+i).innerHTML=netHtml(e);renderCal();daySum()}
+// 사냥 전/후 자동 계산: (사냥 전 보유 - 사냥 후 남은) × 개당 가격 = 지출, 메소 차이 = 수익
+// 가격은 게임 수치를 모르므로 직접 입력해요 (마지막에 입력한 가격은 다음 기록의 기본값)
+const IT=[['hp1','HP포션 1'],['hp2','HP포션 2'],['mp','MP포션'],['dop','도핑 포션'],['st','소돌']];
+if(!S.ip)S.ip={};
+const numStr=v=>v!=null?v.toLocaleString('ko-KR'):'';
+function calcCost(e){const c=e.calc;let cost=0,used=false;
+ if(c)IT.forEach(([k])=>{if(c.b[k]!=null&&c.a[k]!=null&&c.p[k]!=null){cost+=(c.b[k]-c.a[k])*c.p[k];used=true}});
+ return {cost:Math.round(cost),used}}
+function ccText(e){const r=calcCost(e);return r.used?'포션·소돌 사용 지출 <b>'+fmtM(r.cost)+'</b> (지출에 자동 입력됨)':'가격과 사냥 전/후 개수를 넣으면 지출이 자동 계산돼요'}
+// 포션 가격 세트: S.pset=[{name,p:{hp1,hp2,mp,dop,st}}]
+if(!S.pset)S.pset=[];
+function renderSets(){
+ $('setList').innerHTML=S.pset.length?S.pset.map((s,si)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px">
+  <div style="display:flex;gap:6px;margin-bottom:8px"><input value="${esc(s.name)}" style="flex:1" aria-label="세트 이름" onchange="renameSet(${si},this)"><button class="g" onclick="delSet(${si})">삭제</button></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px">${IT.map(([k,n])=>`<div><label>${n} 가격</label><input style="padding:6px" inputmode="text" value="${numStr(s.p[k])}" onchange="setSetPrice(${si},'${k}',this)"></div>`).join('')}</div></div>`).join(''):'<div class="small" style="margin-bottom:8px">저장된 세트가 없어요</div>'}
+function addSet(){const n=(prompt('세트 이름 (예: 사냥터A)','세트 '+(S.pset.length+1))||'').trim();if(!n)return;
+ S.pset.push({name:n,p:{...S.ip}});save();renderSets();renderLog()}
+function renameSet(si,el){const n=el.value.trim();if(!n){el.value=S.pset[si].name;return}S.pset[si].name=n;save();renderLog()}
+function delSet(si){if(!confirm("'"+S.pset[si].name+"' 세트를 삭제할까요? (이미 계산된 기록은 그대로예요)"))return;S.pset.splice(si,1);save();renderSets();renderLog()}
+function setSetPrice(si,k,el){const v=parseMoney(el.value),p=S.pset[si].p;
+ if(v===null){alert('숫자로 입력해 주세요 (예: 150, 2만)');el.value=numStr(p[k]);return}
+ if(v===undefined)delete p[k];else p[k]=v;el.value=numStr(p[k]);save()}
+function reopenCalc(i){renderLog();const d=$('det'+i);if(d)d.open=true}
+function applySet(i,v){if(v==='')return;const s=S.pset[+v],e=S.log[i];
+ const c=e.calc||(e.calc={b:{},a:{},p:{}});c.p={...s.p};S.ip={...s.p};recalc(i);reopenCalc(i)}
+function saveSet(i){const e=S.log[i],p=e.calc?e.calc.p:S.ip;
+ if(!IT.some(([k])=>p[k]!=null)){alert('먼저 개당 가격을 입력해 주세요');return}
+ const n=(prompt('세트 이름 (예: 사냥터A)','세트 '+(S.pset.length+1))||'').trim();if(!n)return;
+ S.pset.push({name:n,p:{...p}});save();renderSets();reopenCalc(i)}
+function calcHtml(e,i){const c=e.calc||{};
+ const g=(grp,k)=>{const o=grp==='p'?(c.p||S.ip):c[grp];return o?numStr(o[k]):''};
+ const inpS='style="width:100%;padding:6px" inputmode="text"';
+ const row=([k,n])=>`<div class="small" style="align-self:center">${n}</div>`+['b','a','p'].map(grp=>`<input ${inpS} value="${g(grp,k)}" onchange="calcIn(${i},'${grp}','${k}',this)">`).join('');
+ return `<details id="det${i}" style="width:100%;margin-top:8px"><summary class="small" style="cursor:pointer">🧮 사냥 전/후로 자동 계산</summary>
+  <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><select style="flex:1;min-width:140px;padding:6px" aria-label="가격 세트 선택" onchange="applySet(${i},this.value)"><option value="">💊 가격 세트 불러오기…</option>${S.pset.map((s,si)=>`<option value="${si}">${esc(s.name)}</option>`).join('')}</select><button class="g" onclick="saveSet(${i})">현재 가격을 세트로 저장</button></div>
+  <div style="display:grid;grid-template-columns:64px 1fr 1fr 1fr;gap:6px;margin-top:8px">
+   <div></div><div class="small">사냥 전 보유</div><div class="small">사냥 후 남은</div><div class="small">개당 가격</div>
+   ${IT.map(row).join('')}
+   <div class="small" style="align-self:center">메소</div><input ${inpS} value="${numStr(c.mb)}" placeholder="전" onchange="calcMeso(${i},'mb',this)"><input ${inpS} value="${numStr(c.ma)}" placeholder="후" onchange="calcMeso(${i},'ma',this)"><div></div>  </div>
+  <div class="small" id="cc${i}" style="margin-top:8px">${ccText(e)}</div>
+  <div class="small" style="margin-top:4px">메소 전/후를 넣으면 그 차이가 수익에 자동 입력돼요. 자동 입력된 값은 위 칸에서 직접 고칠 수도 있어요.</div>
+ </details>`}
+function calcIn(i,grp,k,el){const e=S.log[i],v=parseMoney(el.value);
+ if(v===null){alert('숫자로 입력해 주세요 (예: 150, 2만)');el.value=numStr(e.calc&&(grp==='p'?e.calc.p:e.calc[grp])[k]);return}
+ const c=e.calc||(e.calc={b:{},a:{},p:{...S.ip}});
+ if(v===undefined)delete c[grp][k];else c[grp][k]=v;
+ if(grp==='p'){if(v===undefined)delete S.ip[k];else S.ip[k]=v}
+ el.value=numStr(c[grp][k]);recalc(i)}
+function calcMeso(i,f,el){const e=S.log[i],v=parseMoney(el.value);
+ if(v===null){alert('숫자로 입력해 주세요 (예: 1.2억)');el.value=numStr(e.calc&&e.calc[f]);return}
+ const c=e.calc||(e.calc={b:{},a:{},p:{...S.ip}});
+ if(v===undefined)delete c[f];else c[f]=v;
+ el.value=numStr(c[f]);recalc(i)}
+function recalc(i){const e=S.log[i],c=e.calc,r=calcCost(e);
+ if(r.used)e.exp=r.cost;
+ if(c.mb!=null&&c.ma!=null)e.inc=c.ma-c.mb;
+ save();
+ if($('exp'+i))$('exp'+i).value=numStr(e.exp);if($('inc'+i))$('inc'+i).value=numStr(e.inc);
+ $('cc'+i).innerHTML=ccText(e);$('net'+i).innerHTML=netHtml(e);renderCal();daySum()}
+// 선택한 날 / 그 날이 속한 주(일~토) / 그 날이 속한 달의 순수익 합계
+function daySum(){
+ const [yy,mm,dd]=calSel.split('-').map(Number),wd=new Date(yy,mm-1,dd).getDay();
+ const ws=new Date(yy,mm-1,dd-wd),we=new Date(yy,mm-1,dd-wd+6),a=dkey(ws),b=dkey(we),mp=calSel.slice(0,7)+'-';
+ const sum=f=>{const l=S.log.filter(e=>lcOk(e)&&netOf(e)!=null&&f(dkey(e.t)));return l.length?l.reduce((s,e)=>s+netOf(e),0):null};
+ const row=(lb,n)=>n==null?'':`<div>${lb} 순수익 합계 <b class="${n<0?'down':'up'}">${fmtM(n)}</b></div>`;
+ $('daySum').innerHTML=row('이 날',sum(k=>k===calSel))
+  +row('이 주 <span style="opacity:.8">('+(ws.getMonth()+1)+'/'+ws.getDate()+'~'+(we.getMonth()+1)+'/'+we.getDate()+')</span>',sum(k=>k>=a&&k<=b))
+  +row('이 달 <span style="opacity:.8">('+mm+'월)</span>',sum(k=>k.startsWith(mp)))}
+function renderLog(){
+ renderCal();renderColors();renderSets();fillCharSel($('logCharSel'),logChar);
+ const days='일월화수목금토',[yy,mm,dd]=calSel.split('-').map(Number);
  $('logDayTitle').textContent=mm+'월 '+dd+'일 ('+days[new Date(yy,mm-1,dd).getDay()]+') 기록';
- const list=S.log.map((e,i)=>({e,i})).filter(x=>dkey(x.e.t)===calSel).sort((a,b)=>a.e.t-b.e.t);
- $('logList').innerHTML=list.length?list.map(({e,i})=>`<div class="chk"><span><b>${esc(e.name)}</b> <span class="small">${esc(charName(e.cid)||'삭제된 캐릭터')} · ${pad2(new Date(e.t).getHours())}:${pad2(new Date(e.t).getMinutes())}</span></span><button class="g" onclick="delLog(${i})">삭제</button></div>`).join(''):'<div class="small">이 날은 기록이 없어요</div>'}
+ const dayAll=S.log.map((e,i)=>({e,i})).filter(x=>dkey(x.e.t)===calSel&&lcOk(x.e)).sort((a,b)=>a.e.t-b.e.t);
+ const list=dayAll.filter(x=>kindOf(x.e)===logTab);
+ $('logTabs').innerHTML=[['boss','보스'],['hunt','사냥']].map(([k,n])=>`<button class="g" style="${k===logTab?'background:var(--ac);color:#000;border-color:var(--ac);font-weight:bold':''}" onclick="setLogTab('${k}')">${n} (${dayAll.filter(x=>kindOf(x.e)===k).length})</button>`).join('');
+ $('huntForm').hidden=logTab!=='hunt';
+ $('hNames').innerHTML=[...new Set(S.log.filter(e=>kindOf(e)==='hunt').map(e=>e.name))].map(n=>`<option value="${esc(n)}">`).join('');
+ const inp=(i,f,e,lb)=>`<div><label>${lb}</label><input id="${f}${i}" inputmode="text" style="width:100%" placeholder="예: 150만" value="${e[f]!=null?e[f].toLocaleString('ko-KR'):''}" onchange="setMoney(${i},'${f}',this)"></div>`;
+ $('logList').innerHTML=list.length?list.map(({e,i})=>`<div class="chk" style="flex-wrap:wrap"><span>${shp(e.name,true)}<b>${esc(e.name)}</b> <span class="small">${esc(charLabel(e.cid))} · ${pad2(new Date(e.t).getHours())}:${pad2(new Date(e.t).getMinutes())}</span></span><button class="g" onclick="delLog(${i})">삭제</button>
+  <div style="width:100%;display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-top:4px">${inp(i,'inc',e,'수익')}${inp(i,'exp',e,'지출')}<div style="min-width:64px;text-align:right"><label>순수익</label><span id="net${i}">${netHtml(e)}</span></div></div>${calcHtml(e,i)}</div>`).join(''):`<div class="small">${logTab==='hunt'?'이 날 사냥 기록이 없어요. 위에서 사냥터 이름을 넣고 추가하세요':'이 날 보스 기록이 없어요'}</div>`;
+ daySum()}
 const lastStr=ms=>{const d=new Date(ms);return (d.getMonth()+1)+'/'+d.getDate()+'('+'일월화수목금토'[d.getDay()]+') '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
 function renderMain(){
  const now=Date.now();
@@ -385,7 +672,7 @@ function renderMain(){
   const hw=S.hw.map((h,i)=>({h,i})).filter(x=>x.h.cid===c.id),done=hw.filter(x=>x.h.done).length;
   const lastLine=b=>b.killed?`<div class="small" style="font-size:calc(11px*var(--fz))">마지막 입장 ${lastStr(b.killed)}</div>`:'';
   const bossHtml=ready.length?ready.map(({b,i})=>`<div class="chk"><span><b>${esc(b.name)}</b> <span class="small">${b.killed?'(쿨타임 종료)':'(기록 없음)'}</span>${lastLine(b)}</span><button class="b" onclick="killBoss(${i})">입장</button></div>`).join(''):`<div class="small">${mine.length?'지금 잡을 수 있는 보스가 없어요 👍':'등록된 보스 없음'}</div>`;
-  const nextHtml=wait?`<div class="small" style="margin-top:6px">⏳ 다음: ${esc(wait.b.name)} · ${leftStr(wait.b.killed+wait.b.hours*3600000-now)} 후</div>${lastLine(wait.b)}`:'';
+  const nextHtml=wait?`<div class="small" style="margin-top:6px">⏳ 다음: ${esc(wait.b.name)} · <span data-rdy="${wait.b.killed+wait.b.hours*3600000}">${leftStr(wait.b.killed+wait.b.hours*3600000-now)}</span> 후</div>${lastLine(wait.b)}`:'';
   const sec=(t,title)=>{const l=hw.filter(x=>x.h.type===t);return l.length?`<div class="small" style="margin:8px 0 2px">${title}</div>`+l.map(({h,i})=>`<div class="chk ${h.done?'done':''}"><input type="checkbox" ${h.done?'checked':''} onchange="toggleHw(${i})"><span>${esc(h.name)}</span></div>`).join(''):''};
   const hwHtml=hw.length?sec('daily','매일')+sec('weekly','매주'):'<div class="small">등록된 숙제 없음</div>';
   return `<div class="card"><h2>🍁 ${esc(c.name)} <span class="small">${c.id===S.curChar?'· 선택됨 ':''}${hw.length?'· 숙제 '+done+'/'+hw.length:''}</span></h2>
@@ -394,10 +681,167 @@ function renderMain(){
 function calUrl(i){
  const b=S.boss[i],end=b.killed+b.hours*3600000,z=t=>new Date(t).toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');
  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(charName(b.cid)+' · '+b.name+' 쿨타임 종료')+'&dates='+z(end)+'/'+z(end+600000)}
-setInterval(()=>{if(editI<0&&($('t-boss').classList.contains('on')||$('t-main').classList.contains('on'))&&S.boss.some(b=>b.killed))renderBoss()},1000);
+// 1초마다 화면 전체를 다시 그리면 누르는 순간과 겹쳐 눌림이 씹힐 수 있어서, 남은 시간 글자만 바꿔요.
+// 쿨타임이 막 끝난 보스가 있을 때만 화면을 다시 그려요.
+setInterval(()=>{
+ let done=false;const now=Date.now();
+ document.querySelectorAll('[data-rdy]').forEach(el=>{const left=+el.dataset.rdy-now;if(left<=0)done=true;else{const t=leftStr(left);if(el.textContent!==t)el.textContent=t}});
+ if(done&&editI<0)renderBoss()},1000);
 renderBoss();
 
+// 통계: 기록 탭에 쌓인 수익/지출을 기간·종류별로 분석 (금액을 입력한 기록만 계산에 들어가요)
+let stC='all',stP='month',stK='all',stFrom=today().slice(0,8)+'01',stTo=today();
+function setSt(f,v){if(f==='p')stP=v;else stK=v;renderStat()}
+function stRange(){const d=new Date(),t=today(),Y=d.getFullYear(),M=d.getMonth(),D=d.getDate(),w=d.getDay();
+ if(stP==='all')return ['0000-00-00','9999-99-99'];
+ if(stP==='week')return [dkey(new Date(Y,M,D-w)),dkey(new Date(Y,M,D-w+6))];
+ if(stP==='month'){const p=t.slice(0,7);return [p+'-01',p+'-31']}
+ return [stFrom||'0000-00-00',stTo||'9999-99-99']}
+// 순수익 그래프: 단위(일/주/월) × 모양(막대/꺾은선)
+let stG='day',stCh='bar';
+function setStG(v){stG=v;renderStat()}
+function setStCh(v){stCh=v;renderStat()}
+function stGroups(D){const m=new Map(),wd='일월화수목금토';
+ D.forEach(e=>{const d=new Date(e.t),Y=d.getFullYear(),M=d.getMonth(),Dd=d.getDate();let key,label;
+  if(stG==='month'){key=dkey(e.t).slice(0,7);label=Y+'년 '+(M+1)+'월'}
+  else if(stG==='week'){const s=new Date(Y,M,Dd-d.getDay()),f=new Date(Y,M,Dd-d.getDay()+6);key=dkey(s);label=(s.getMonth()+1)+'/'+s.getDate()+'~'+(f.getMonth()+1)+'/'+f.getDate()}
+  else{key=dkey(e.t);label=(M+1)+'/'+Dd+'('+wd[d.getDay()]+')'}
+  const o=m.get(key)||{label,v:0};o.v+=netOf(e);m.set(key,o)});
+ return [...m].sort((x,y)=>x[0]<y[0]?-1:1).map(([k,o])=>({k,label:o.label,v:o.v}))}
+function lineSvg(a){
+ const W=480,H=220,pl=52,pr=14,pt=16,pb=28,vals=a.map(x=>x.v),mx=Math.max(0,...vals),mn=Math.min(0,...vals),span=(mx-mn)||1;
+ const X=i=>a.length===1?pl+(W-pl-pr)/2:pl+i*(W-pl-pr)/(a.length-1),Y=v=>pt+(mx-v)/span*(H-pt-pb);
+ const tx=(x,y,t,anc)=>`<text x="${x}" y="${y}" text-anchor="${anc}" style="fill:var(--sub);font-size:11px">${esc(t)}</text>`;
+ let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="순수익 꺾은선 그래프" style="display:block;max-height:300px">`;
+ s+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(0)}" y2="${Y(0)}" style="stroke:var(--line)"/>`+tx(pl-6,Y(0)+4,'0','end');
+ if(mx>0)s+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(mx)}" y2="${Y(mx)}" style="stroke:var(--line);stroke-dasharray:3 3"/>`+tx(pl-6,Y(mx)+4,fmtM(mx),'end');
+ if(mn<0)s+=`<line x1="${pl}" x2="${W-pr}" y1="${Y(mn)}" y2="${Y(mn)}" style="stroke:var(--line);stroke-dasharray:3 3"/>`+tx(pl-6,Y(mn)+4,fmtM(mn),'end');
+ if(a.length>1)s+=`<polyline fill="none" points="${a.map((p,i)=>X(i)+','+Y(p.v)).join(' ')}" style="stroke:var(--ac);stroke-width:2;stroke-linejoin:round"/>`;
+ a.forEach((p,i)=>{s+=`<circle cx="${X(i)}" cy="${Y(p.v)}" r="4" style="fill:${p.v<0?'var(--bad)':'var(--ok)'};stroke:#12141d;stroke-width:1"><title>${esc(p.label)}: ${fmtM(p.v)}</title></circle>`});
+ const idx=[...new Set([0,Math.floor((a.length-1)/2),a.length-1])];
+ idx.forEach((i,n)=>{s+=tx(Math.min(Math.max(X(i),pl),W-pr),H-8,a[i].label,a.length===1?'middle':(i===0?'start':i===a.length-1?'end':'middle'))});
+ return s+'</svg>'}
+function chartCard(D){
+ const cls=n=>n<0?'down':'up',cap={day:31,week:26,month:24}[stG],unit={day:'일',week:'주',month:'개월'}[stG];
+ const all=stGroups(D),a=all.slice(-cap),mx=Math.max(...a.map(x=>Math.abs(x.v)))||1;
+ const btn=(fn,k,n,cur)=>`<button class="g" style="${k===cur?'background:var(--ac);color:#000;border-color:var(--ac);font-weight:bold':''}" onclick="${fn}('${k}')">${n}</button>`;
+ const ctl=`<div class="presets" style="margin:0 0 6px">${[['day','일별'],['week','주별'],['month','월별']].map(([k,n])=>btn('setStG',k,n,stG)).join('')}</div><div class="presets" style="margin:0 0 12px">${[['bar','막대 그래프'],['line','꺾은선 그래프']].map(([k,n])=>btn('setStCh',k,n,stCh)).join('')}</div>`;
+ const lw={day:74,week:116,month:92}[stG];
+ const body=stCh==='line'?lineSvg(a):a.map(x=>`<div class="br"><span class="d" style="width:${lw}px">${x.label}</span><div class="bw"><i style="${x.v<0?'right:50%':'left:50%'};width:${Math.abs(x.v)/mx*50}%;background:${x.v<0?'var(--bad)':'var(--ok)'}"></i></div><span class="v ${cls(x.v)}">${fmtM(x.v)}</span></div>`).join('');
+ return `<div class="card"><h2>${{day:'일별',week:'주별',month:'월별'}[stG]} 순수익</h2>${ctl}${body}${all.length>a.length?`<div class="small" style="margin-top:6px">최근 ${a.length}${unit}만 보여요 (전체 ${all.length}${unit})</div>`:''}</div>`}
+function renderStat(){
+ const btn=(g,k,n,cur)=>`<button class="g" style="${k===cur?'background:var(--ac);color:#000;border-color:var(--ac);font-weight:bold':''}" onclick="setSt('${g}','${k}')">${n}</button>`;
+ $('stPeriod').innerHTML=[['week','이번 주'],['month','이번 달'],['all','전체'],['custom','직접 지정']].map(([k,n])=>btn('p',k,n,stP)).join('');
+ $('stKind').innerHTML=[['all','전체'],['boss','보스'],['hunt','사냥']].map(([k,n])=>btn('k',k,n,stK)).join('');
+ $('stCustom').hidden=stP!=='custom';$('stFrom').value=stFrom;$('stTo').value=stTo;
+ stC=normChar(stC);fillCharSel($('stCharSel'),stC);
+ const [a,b]=stRange();
+ $('stRange').textContent=stP==='all'?'전체 기간':stP==='custom'?(stFrom||'처음')+' ~ '+(stTo||'지금'):a+' ~ '+(stP==='month'?dkey(new Date(new Date().getFullYear(),new Date().getMonth()+1,0)):b);
+ const base=S.log.filter(e=>{const k=dkey(e.t);return k>=a&&k<=b&&(stK==='all'||kindOf(e)===stK)});
+ const inR=base.filter(e=>charOk(e,stC));
+ const D=inR.filter(e=>netOf(e)!=null);
+ if(!D.length){$('stBody').innerHTML=`<div class="card"><div class="small">이 조건에 금액이 입력된 기록이 없어요. 기록 탭에서 수익·지출을 입력하면 여기에 통계가 나와요. (조건에 맞는 기록 ${inR.length}건)</div></div>`;return}
+ const inc=D.reduce((s,e)=>s+(e.inc||0),0),exp=D.reduce((s,e)=>s+(e.exp||0),0),net=inc-exp,cls=n=>n<0?'down':'up';
+ const card=(t,v,c)=>`<div class="sc"><label>${t}</label><b class="${c||''}">${v}</b></div>`;
+ const sum=`<div class="card"><h2>요약</h2><div class="stg">${card('총 수익',fmtM(inc))}${card('총 지출',fmtM(exp))}${card('순수익',fmtM(net),cls(net))}${card('금액 입력 기록',D.length+'건'+(inR.length>D.length?' / 전체 '+inR.length:''))}${card('1건 평균 순수익',fmtM(Math.round(net/D.length)),cls(net))}</div></div>`;
+ const g=new Map();D.forEach(e=>{const o=g.get(e.name)||{n:0,net:0};o.n++;o.net+=netOf(e);g.set(e.name,o)});
+ const rows=[...g].sort((x,y)=>y[1].net-x[1].net);
+ const rank=`<div class="card"><h2>이름별 순위</h2><table><tr><th>이름</th><th>횟수</th><th>순수익</th><th>1건 평균</th></tr>${rows.map(([n,o])=>`<tr><td>${shp(n,true)}${esc(n)}</td><td>${o.n}</td><td class="${cls(o.net)}"><b>${fmtM(o.net)}</b></td><td>${fmtM(Math.round(o.net/o.n))}</td></tr>`).join('')}</table><div class="small" style="margin-top:6px">순수익이 큰 순서예요.</div></div>`;
+ const bars=chartCard(D);
+ // 캐릭터 비교: 선택한 기간·종류에서 모든 캐릭터를 나란히 (캐릭터 필터와 상관없이)
+ const cg=new Map();base.filter(e=>netOf(e)!=null).forEach(e=>{const key=S.chars.some(c=>c.id===e.cid)?e.cid:'__del';const o=cg.get(key)||{n:0,net:0};o.n++;o.net+=netOf(e);cg.set(key,o)});
+ const cmp=cg.size>1?`<div class="card"><h2>캐릭터 비교</h2><table><tr><th>캐릭터</th><th>횟수</th><th>순수익</th><th>1건 평균</th></tr>${[...cg].sort((x,y)=>y[1].net-x[1].net).map(([k,o])=>`<tr><td>${esc(k==='__del'?'삭제된 캐릭터':charLabel(k))}</td><td>${o.n}</td><td class="${cls(o.net)}"><b>${fmtM(o.net)}</b></td><td>${fmtM(Math.round(o.net/o.n))}</td></tr>`).join('')}</table><div class="small" style="margin-top:6px">위 캐릭터 선택과 상관없이 모든 캐릭터를 비교해요.</div></div>`:'';
+ $('stBody').innerHTML=sum+cmp+rank+bars}
 autoReset();renderChars();renderHw();renderLog();scheduleDue();
+if(loadBad)setTimeout(()=>alert('저장된 데이터에 문제가 있어 새로 시작했어요.\n원래 데이터는 이 브라우저에 따로 보관해 뒀어요. 백업 파일이 있다면 "불러오기"로 복원할 수 있어요.'),300);
+</script>
+<script>
+// ===== 장비 효율 계산기 (새 탭 전용 코드) =====
+// 데이터는 S.gear에 저장돼요 (백업/다른 탭 동기화에도 같이 들어가요)
+const G_PARTS=[['hat','모자'],['top','상의'],['bottom','하의'],['shoes','신발'],['gloves','장갑'],['cape','망토'],['pend1','펜던트1'],['pend2','펜던트2'],['ear','귀걸이'],['weapon','무기'],['belt','벨트'],['face','얼굴 장식'],['eye','눈 장식'],['x1','빈 슬롯 1'],['x2','빈 슬롯 2'],['x3','빈 슬롯 3'],['x4','빈 슬롯 4']];
+const G_F=['cs','ca','cp','ns','na','np'];
+function gearS(){let g=S.gear;
+ if(!isObj(g))g=S.gear={};
+ if(!Number.isFinite(g.ratio)||g.ratio<0)g.ratio=10;
+ g.deduct=!!g.deduct;if(g.suit!=='one')g.suit='two';
+ if(!isObj(g.names))g.names={};if(!isObj(g.rows))g.rows={};
+ return g}
+const gKR=n=>{n=Math.round(n);if(!isFinite(n))return '-';if(n<0)return '-'+gKR(-n);
+ const j=Math.floor(n/1e12),e=Math.floor(n%1e12/1e8),m=Math.floor(n%1e8/1e4),r=n%1e4,p=[];
+ if(j)p.push(j.toLocaleString('ko-KR')+'조');if(e)p.push(e.toLocaleString('ko-KR')+'억');if(m)p.push(m.toLocaleString('ko-KR')+'만');if(r||!p.length)p.push(r.toLocaleString('ko-KR'));
+ return p.join(' ')};
+const gPer=x=>x>=1?gKR(x):(Math.round(x*100)/100).toString();
+const gN=x=>Number.isInteger(x)?x.toLocaleString('ko-KR'):(Math.round(x*10)/10).toLocaleString('ko-KR');
+const gLabel=(g,k)=>{const d=G_PARTS.find(p=>p[0]===k)[1];
+ if(k==='top')return g.suit==='one'?'한벌옷':'상의';
+ if(k[0]==='x')return (g.names[k]&&g.names[k].trim())||d;
+ return d};
+const gOff=(g,k)=>k==='bottom'&&g.suit==='one';
+// 핵심 계산: 부위별 결과와 순위 (화면과 분리된 순수 함수)
+function gearCalc(g){
+ const ratio=g.ratio,out=[];
+ G_PARTS.forEach(([k])=>{
+  if(gOff(g,k))return out.push({k,label:gLabel(g,k),status:'off'});
+  const r=g.rows[k]||{},nextAny=r.ns!==undefined||r.na!==undefined||r.np!==undefined;
+  if(!nextAny)return out.push({k,label:gLabel(g,k),status:'empty'});
+  if(r.np===undefined)return out.push({k,label:gLabel(g,k),status:'noprice'});
+  const cur=(r.cs||0)+(r.ca||0)*ratio,nxt=(r.ns||0)+(r.na||0)*ratio,gain=nxt-cur;
+  if(!(gain>0))return out.push({k,label:gLabel(g,k),status:'notup',gain});
+  const cost=Math.max(0,r.np-(g.deduct?(r.cp||0):0)),per=cost/gain;
+  out.push({k,label:gLabel(g,k),status:'ok',gain,cost,per,perAtk:per*ratio})});
+ const ranked=out.filter(x=>x.status==='ok').sort((a,b)=>a.per-b.per);
+ return {out,ranked}}
+function gResText(x){
+ return x.status==='ok'?'<b style="color:var(--tx)">'+gPer(x.per)+'</b>'
+  :x.status==='notup'?'<span style="color:var(--bad)">업그레이드 아님</span>'
+  :x.status==='noprice'?'다음 가격 입력 필요':'-'}
+function gUpdate(){
+ const g=gearS(),{out,ranked}=gearCalc(g);
+ out.forEach(x=>{const c=$('gr-'+x.k);if(c)c.innerHTML=gResText(x)});
+ const best=ranked[0];
+ $('gSum').innerHTML=best?`<div class="small">지금 가장 먼저 올릴 부위</div><div style="font-size:calc(22px*var(--fz));font-weight:bold;margin:4px 0"><span style="color:var(--ac)">${esc(best.label)}</span></div><div>스탯 1당 <b class="up">${gPer(best.per)}원</b> <span class="small">(공격력 1당 ${gPer(best.perAtk)}원)</span></div>`
+  :`<div class="small">지금 가장 먼저 올릴 부위</div><div style="margin-top:4px">부위별로 다음 업그레이드 값을 입력하면 추천이 나와요.</div>`;
+ const mx=Math.max(...ranked.map(x=>x.per),0)||1;
+ const notup=out.filter(x=>x.status==='notup');
+ $('gRank').innerHTML=(ranked.length?`<div class="small" style="margin-bottom:8px">스탯 1당 비용이 낮은 순서예요. 막대가 짧을수록 가성비가 좋아요.</div>`+ranked.map((x,i)=>{
+  const cell=(l,v)=>`<div><label>${l}</label><b>${v}</b></div>`;
+  return `<div class="gk ${i<3?'r'+(i+1):''}"><div class="gk-h"><span class="gbadge">${i+1}위</span><b style="font-size:calc(16px*var(--fz))">${esc(x.label)}</b>${i===0?'<span class="small" style="color:var(--ac)">★ 가장 추천</span>':''}</div>
+   <div class="gk-g">${cell('환산 스탯 상승량','+'+gN(x.gain))}${cell('실제 비용',gKR(x.cost)+'원')}${cell('스탯 1당 비용',gPer(x.per)+'원')}${cell('공격력 1당 비용',gPer(x.perAtk)+'원')}</div>
+   <div class="gbar"><i style="width:${Math.max(3,x.per/mx*100)}%"></i></div></div>`}).join(''):'<div class="small">추천할 업그레이드가 아직 없어요. 다음 아이템의 스탯·공격력·가격을 입력해 보세요.</div>')
+  +(notup.length?`<div class="small" style="margin-top:6px">업그레이드가 아닌 부위(환산 스탯이 늘지 않음): ${notup.map(x=>esc(x.label)).join(', ')}</div>`:'')}
+function renderGear(){
+ const g=gearS();
+ $('gRatio').value=g.ratio;$('gDeduct').checked=g.deduct;
+ $('gSuit').innerHTML=[['one','한벌옷'],['two','상의+하의']].map(([k,n])=>`<button class="g" style="${g.suit===k?'background:var(--ac);color:#000;border-color:var(--ac);font-weight:bold':''}" onclick="gSuitSet('${k}')">${n}</button>`).join('');
+ const inp=(k,f,off)=>{const v=(g.rows[k]||{})[f];return `<td><input class="gi" inputmode="decimal" data-k="${k}" data-f="${f}" value="${v!==undefined?v.toLocaleString('ko-KR'):''}" oninput="gIn(this)" onchange="gChange(this)" ${off?'disabled':''} aria-label="${esc(gLabel(g,k))} ${f[0]==='c'?'현재':'다음'}"></td>`};
+ $('gTbl').innerHTML=`<thead><tr><th rowspan="2">부위</th><th colspan="3">현재 장비</th><th colspan="3">다음 업그레이드 아이템</th><th rowspan="2"></th><th rowspan="2">스탯 1당 비용</th></tr><tr><th>스탯</th><th>공격력</th><th>가격(판매가)</th><th>스탯 합</th><th>공격력</th><th>가격</th></tr></thead><tbody>`
+  +G_PARTS.map(([k])=>{const off=gOff(g,k);
+   const nm=k[0]==='x'?`<input class="gname" value="${esc(gLabel(g,k))}" data-k="${k}" oninput="gName(this)" onchange="gNameFix(this)" ${off?'disabled':''} aria-label="빈 슬롯 이름 (눌러서 수정)">`:`<span class="gpart">${esc(gLabel(g,k))}</span>${off?'<div class="small">한벌옷 선택 시 제외</div>':''}`;
+   return `<tr class="${off?'off':''}"><td>${nm}</td>${G_F.map(f=>inp(k,f,off)).join('')}<td><button class="g" onclick="gApply('${k}')" ${off?'disabled':''}>적용</button></td><td class="gres" id="gr-${k}"></td></tr>`}).join('')+'</tbody>';
+ gLast=JSON.stringify(S.gear);gUpdate()}
+let gLast='';
+function gStore(el){const g=gearS(),k=el.dataset.k,f=el.dataset.f,v=parseMoney(el.value),r=g.rows[k]||(g.rows[k]={});
+ if(v==null)delete r[f];else r[f]=v;save();gLast=JSON.stringify(S.gear);gUpdate()}
+// 숫자만 입력 중이면 콤마를 자동으로 붙여요 (커서 위치 유지). 억/만 같은 글자가 있으면 그대로 두고 입력 후 정리해요.
+function gIn(el){const raw=el.value,pos=el.selectionStart,left=raw.slice(0,pos).replace(/,/g,'').length;
+ if(/^[\d,]*$/.test(raw)){const d=raw.replace(/,/g,''),f=d?Number(d).toLocaleString('ko-KR'):'';
+  if(f!==raw){el.value=f;let c=0,i=0;for(;i<f.length&&c<left;i++)if(f[i]!==',')c++;try{el.setSelectionRange(i,i)}catch(e){}}}
+ gStore(el)}
+function gChange(el){const r=gearS().rows[el.dataset.k]||{},v=r[el.dataset.f];el.value=v!==undefined?v.toLocaleString('ko-KR'):''}
+function gRatioIn(el){const v=parseFloat(el.value);if(Number.isFinite(v)&&v>=0){gearS().ratio=v;save();gLast=JSON.stringify(S.gear);gUpdate()}}
+function gRatioFix(el){el.value=gearS().ratio}
+function gDeductIn(el){gearS().deduct=el.checked;save();gLast=JSON.stringify(S.gear);gUpdate()}
+function gSuitSet(k){gearS().suit=k;save();renderGear()}
+function gName(el){gearS().names[el.dataset.k]=el.value;save();gLast=JSON.stringify(S.gear);gUpdate()}
+function gNameFix(el){const g=gearS();if(!el.value.trim()){delete g.names[el.dataset.k];save()}el.value=gLabel(g,el.dataset.k);gLast=JSON.stringify(S.gear);gUpdate()}
+function gApply(k){const r=gearS().rows[k];if(!r||(r.ns===undefined&&r.na===undefined&&r.np===undefined))return;
+ [['ns','cs'],['na','ca'],['np','cp']].forEach(([n,c])=>{if(r[n]===undefined)delete r[c];else r[c]=r[n];delete r[n]});
+ save();renderGear()}
+function gReset(){if(!confirm('장비 효율 계산기의 모든 입력과 빈 슬롯 이름을 처음 상태로 되돌릴까요?'))return;
+ S.gear={};gearS();save();renderGear()}
+// 다른 탭/창에서 바뀐 데이터가 들어왔을 때 (이 탭이 열려 있으면) 다시 그려요
+function gSyncView(){if($('t-gear').classList.contains('on')&&JSON.stringify(S.gear)!==gLast)renderGear()}
+window.addEventListener('storage',gSyncView);window.addEventListener('focus',gSyncView);document.addEventListener('visibilitychange',gSyncView);
 </script>
 </body>
 </html>
