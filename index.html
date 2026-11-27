@@ -47,6 +47,12 @@ th{color:var(--sub);font-weight:normal;font-size:calc(12px*var(--fz))}
 .flex>div{flex:1}
 .timer{font-size:calc(28px*var(--fz));font-variant-numeric:tabular-nums}
 .up{color:var(--ok)}.down{color:var(--bad)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .wd{text-align:center;color:var(--sub);font-size:calc(12px*var(--fz));padding:4px 0}
+.day{position:relative;aspect-ratio:1;background:#12141d;border:1px solid var(--line);border-radius:8px;color:var(--tx);cursor:pointer;padding:0;font-size:calc(14px*var(--fz))}
+.day.td{border-color:var(--ac)}
+.day.sel{background:var(--ac);color:#000;font-weight:bold}
+.day i{position:absolute;right:3px;bottom:2px;font-style:normal;font-size:calc(10px*var(--fz));background:var(--ok);color:#000;border-radius:8px;padding:0 4px;min-width:14px;line-height:1.4}
 </style>
 </head>
 <body>
@@ -133,9 +139,24 @@ th{color:var(--sub);font-weight:normal;font-size:calc(12px*var(--fz))}
  </div>
 </section>
 
+<section id="t-log">
+ <div class="card"><h2>📅 보스 입장 기록</h2>
+  <div class="small" style="margin-bottom:10px">보스에 "입장"을 누르면 자동으로 기록돼요. 날짜를 누르면 그날의 기록을 볼 수 있어요.</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px">
+   <button class="g" onclick="calMove(-1)" aria-label="이전 달">◀</button>
+   <b id="calTitle"></b>
+   <button class="g" onclick="calMove(1)" aria-label="다음 달">▶</button>
+  </div>
+  <div class="cal" id="calGrid"></div>
+  <div class="small" id="calSum" style="margin-top:8px"></div>
+  <div style="margin-top:6px"><button class="g" onclick="calToday()">오늘로</button></div>
+ </div>
+ <div class="card"><h2 id="logDayTitle"></h2><div id="logList"></div></div>
+</section>
+
 </main>
 <script>
-const TABS=[['main','메인'],['boss','보스 쿨타임'],['daily','숙제']];
+const TABS=[['main','메인'],['boss','보스 쿨타임'],['daily','숙제'],['log','기록']];
 const KEY='mapleland-utils';
 let S={hw:[],hunt:[],price:[],weekDay:1,memo:'',lastDaily:'',lastWeekly:''};
 try{Object.assign(S,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
@@ -260,7 +281,7 @@ function durStr(h){const d=Math.floor(h/24+1e-9),r=Math.round((h-d*24)*10)/10;re
 function addBoss(){const n=$('bName').value.trim(),h=+$('bHours').value;if(!n||!(h>0))return;
  S.boss.push({name:n,hours:h,killed:0,pids:{},noal:false,cid:S.curChar});$('bName').value='';save();renderBoss()}
 async function killBoss(i){
- const b=S.boss[i];cancelPush(b);b.killed=Date.now();save();renderBoss();
+ const b=S.boss[i];cancelPush(b);b.killed=Date.now();save();renderBoss();addLog(b,b.killed);
  if(b.noal){nMsg('🔕 '+b.name+'은(는) 알림을 끈 보스예요.');return}
  if(!leadsOf(b).length){nMsg('알림 시간이 설정돼 있지 않아요. ⚙ 환경설정에서 추가하세요.');return}
  const n=await scheduleBoss(b);
@@ -290,7 +311,10 @@ async function saveTime(i){
  const b=S.boss[i],t=new Date($('etIn').value).getTime();
  if(!t||isNaN(t)){alert('시각을 입력해 주세요');return}
  if(t>Date.now()+60000){alert('미래 시각은 입력할 수 없어요');return}
- editI=-1;cancelPush(b);b.killed=t;save();renderBoss();
+ editI=-1;cancelPush(b);
+ const old=b.killed,li=old?S.log.findIndex(e=>e.t===old&&e.cid===b.cid&&e.name===b.name):-1;
+ b.killed=t;save();renderBoss();
+ if(li>=0){S.log[li].t=t;save();renderLog()}else addLog(b,t);
  const ready=t+b.hours*3600000;
  if(ready<=Date.now()){nMsg('✏ '+b.name+' 입장 시각을 고쳤어요. 쿨타임이 이미 끝났어요.');return}
  if(b.noal||!leadsOf(b).length){nMsg('✏ '+b.name+' 입장 시각을 고쳤어요.');return}
@@ -327,6 +351,30 @@ function renderBoss(){
    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${[[1,'1분'],[5,'5분'],[10,'10분'],[30,'30분'],[60,'1시간']].map(([m,n])=>`<button class="g" onclick="etAdj(-${m})">${n} 전</button>`).join('')}</div>
    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${[[1,'1분'],[5,'5분'],[10,'10분'],[30,'30분'],[60,'1시간']].map(([m,n])=>`<button class="g" onclick="etAdj(${m})">${n} 후</button>`).join('')}</div>
    <div style="display:flex;gap:6px;margin-top:8px"><button class="b" onclick="saveTime(${i})">저장</button><button class="g" onclick="cancelEdit()">취소</button></div></div>`:''}</div>`}).join(''):'<div class="small">위에서 보스를 추가하세요</div>';renderMain()}
+// 기록 (달력): 입장할 때마다 S.log에 {t:입장시각, cid, name} 이 쌓여요
+if(!S.log)S.log=S.boss.filter(b=>b.killed).map(b=>({t:b.killed,cid:b.cid,name:b.name}));
+let cal=new Date();cal.setDate(1);let calSel=today();
+const pad2=n=>String(n).padStart(2,'0');
+const dkey=ms=>{const d=new Date(ms);return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())};
+function addLog(b,t){S.log.push({t,cid:b.cid,name:b.name});save();renderLog()}
+function calMove(n){cal.setMonth(cal.getMonth()+n);renderLog()}
+function calToday(){cal=new Date();cal.setDate(1);calSel=today();renderLog()}
+function calPick(k){calSel=k;renderLog()}
+function delLog(i){if(!confirm('이 기록을 삭제할까요?'))return;S.log.splice(i,1);save();renderLog()}
+function renderLog(){
+ const y=cal.getFullYear(),m=cal.getMonth(),first=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate();
+ const cnt={};let total=0;S.log.forEach(e=>{const k=dkey(e.t);cnt[k]=(cnt[k]||0)+1;if(k.startsWith(y+'-'+pad2(m+1)+'-'))total++});
+ const days='일월화수목금토';
+ let h=[...days].map(d=>`<div class="wd">${d}</div>`).join('');
+ for(let i=0;i<first;i++)h+='<div></div>';
+ for(let d=1;d<=dim;d++){const k=y+'-'+pad2(m+1)+'-'+pad2(d);
+  h+=`<button class="day ${k===today()?'td':''} ${k===calSel?'sel':''}" onclick="calPick('${k}')"><span>${d}</span>${cnt[k]?`<i>${cnt[k]}</i>`:''}</button>`}
+ $('calGrid').innerHTML=h;$('calTitle').textContent=y+'년 '+(m+1)+'월';
+ $('calSum').textContent=total?'이 달 입장 '+total+'회':'이 달 기록 없음';
+ const [yy,mm,dd]=calSel.split('-').map(Number);
+ $('logDayTitle').textContent=mm+'월 '+dd+'일 ('+days[new Date(yy,mm-1,dd).getDay()]+') 기록';
+ const list=S.log.map((e,i)=>({e,i})).filter(x=>dkey(x.e.t)===calSel).sort((a,b)=>a.e.t-b.e.t);
+ $('logList').innerHTML=list.length?list.map(({e,i})=>`<div class="chk"><span><b>${esc(e.name)}</b> <span class="small">${esc(charName(e.cid)||'삭제된 캐릭터')} · ${pad2(new Date(e.t).getHours())}:${pad2(new Date(e.t).getMinutes())}</span></span><button class="g" onclick="delLog(${i})">삭제</button></div>`).join(''):'<div class="small">이 날은 기록이 없어요</div>'}
 const lastStr=ms=>{const d=new Date(ms);return (d.getMonth()+1)+'/'+d.getDate()+'('+'일월화수목금토'[d.getDay()]+') '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
 function renderMain(){
  const now=Date.now();
@@ -349,7 +397,7 @@ function calUrl(i){
 setInterval(()=>{if(editI<0&&($('t-boss').classList.contains('on')||$('t-main').classList.contains('on'))&&S.boss.some(b=>b.killed))renderBoss()},1000);
 renderBoss();
 
-autoReset();renderChars();renderHw();scheduleDue();
+autoReset();renderChars();renderHw();renderLog();scheduleDue();
 </script>
 </body>
 </html>
