@@ -65,6 +65,9 @@ details[open]>summary.fold::before{content:"▼"}
 .lg{display:flex;align-items:center;gap:8px;padding:6px 0;margin:0;font-size:calc(14px*var(--fz));color:var(--tx)}
 .lg input{width:30px;height:30px;padding:0;border:0;background:none;cursor:pointer}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:min(92vw,420px);background:var(--card);color:var(--tx);border:1px solid var(--ac);border-radius:10px;padding:10px 14px;font-size:calc(14px*var(--fz));box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:50}
+.estep{display:flex;align-items:center;gap:10px;font-size:calc(14px*var(--fz))}
+.estep b{min-width:34px;text-align:center;font-size:calc(20px*var(--fz))}
+.estep button{min-width:40px;font-size:calc(16px*var(--fz))}
 /* 장비 효율 계산기 */
 label.gck{display:flex;align-items:center;gap:8px;margin:10px 0 0;color:var(--tx);font-size:calc(14px*var(--fz));cursor:pointer}
 .gck input{width:auto}
@@ -242,7 +245,7 @@ label.gck{display:flex;align-items:center;gap:8px;margin:10px 0 0;color:var(--tx
  <div class="card"><h2>⚙ 장비 효율 계산기</h2>
   <div style="margin-bottom:12px"><label for="gChar">캐릭터</label><select id="gChar" onchange="gCharSel(this.value)"></select>
    <div class="small" style="margin-top:4px">캐릭터마다 입력값이 따로 저장돼요. 위쪽 캐릭터 선택과 같이 움직여요.</div></div>
-  <div class="small" style="margin-bottom:12px;line-height:1.7">"스탯 : 공격력" 비율로 모든 능력치를 <b>환산 스탯</b>(스탯 + 공격력 × 비율)으로 통일해서, 부위별 다음 업그레이드의 <b>스탯 1당 비용</b>이 낮은(가성비 좋은) 순서로 보여줘요. 값을 입력하면 바로 계산돼요. 가격은 <code>1억</code>, <code>2500만</code>처럼 단위를 붙여 써도 돼요.</div>
+  <div class="small" style="margin-bottom:12px;line-height:1.7">"스탯 : 공격력" 비율로 모든 능력치를 <b>환산 스탯</b>(스탯 + 공격력 × 비율)으로 통일해서, 부위별 다음 업그레이드의 <b>스탯 1당 비용</b>이 낮은(가성비 좋은) 순서로 보여줘요. 값을 입력하면 바로 계산돼요. 가격은 <code>1억</code>, <code>2500만</code>, <code>4억3천만</code>처럼 단위를 붙여 써도 돼요.</div>
   <div class="row" style="align-items:end">
    <div><label for="gRatio">스탯 : 공격력 비율 (공격력 1 = 스탯 몇?)</label><input id="gRatio" inputmode="decimal" oninput="gRatioIn(this)" onchange="gRatioFix(this)"></div>
    <div><label>옷 종류</label><div class="presets" id="gSuit" style="margin:0"></div></div>
@@ -256,9 +259,22 @@ label.gck{display:flex;align-items:center;gap:8px;margin:10px 0 0;color:var(--tx
  <div class="card"><h2>업그레이드 추천 순위</h2><div id="gRank"></div></div>
 </section>
 
+<section id="t-exp">
+ <div class="card"><h2>⏱ 분당 경험치 계산기</h2>
+  <div class="small" style="margin-bottom:12px;line-height:1.7">한 타임(60분) 동안 얻은 경험치 총량을 넣으면 분당 경험치를 계산해요. 경험치 쿠폰(2배/3배, 각 15분)을 썼다면 장수를 지정하세요. 쿠폰을 쓴 시간은 2배/3배로 얻은 것으로 보고, 쿠폰 효과를 뺀 <b>기본 분당 경험치</b>를 구해요. <code>1.2억</code>, <code>3500만</code>, <code>4억3천만</code>처럼 단위를 붙여 써도 돼요.</div>
+  <label for="eTotal">한 타임 획득 경험치 총량</label>
+  <input id="eTotal" inputmode="text" placeholder="예: 3억 6000만" autocomplete="off" oninput="eIn(this)" onchange="eFix(this)">
+  <div class="small" style="margin:14px 0 4px">사용한 경험치 쿠폰 <span id="eCt"></span></div>
+  <div class="chk"><span>2배 경험치 쿠폰 (15분)</span><div class="estep"><button class="g" id="eM2" onclick="eStep('n2',-1)" aria-label="2배 쿠폰 한 장 줄이기">−</button><b id="eN2">0</b>장<button class="g" id="eP2" onclick="eStep('n2',1)" aria-label="2배 쿠폰 한 장 늘리기">＋</button></div></div>
+  <div class="chk"><span>3배 경험치 쿠폰 (15분)</span><div class="estep"><button class="g" id="eM3" onclick="eStep('n3',-1)" aria-label="3배 쿠폰 한 장 줄이기">−</button><b id="eN3">0</b>장<button class="g" id="eP3" onclick="eStep('n3',1)" aria-label="3배 쿠폰 한 장 늘리기">＋</button></div></div>
+  <div style="margin-top:10px"><button class="g" onclick="eClear()">전부 지우기</button></div>
+ </div>
+ <div class="card" id="eRes"></div>
+</section>
+
 </main>
 <script>
-const TABS=[['main','메인'],['boss','보스 쿨타임'],['daily','숙제'],['log','기록'],['stat','통계'],['gear','장비 효율 계산기']];
+const TABS=[['main','메인'],['boss','보스 쿨타임'],['daily','숙제'],['log','기록'],['stat','통계'],['gear','장비 효율 계산기'],['exp','분당 경험치 계산기']];
 const KEY='mapleland-utils';
 let S={hw:[],hunt:[],price:[],weekDay:1,memo:'',lastDaily:'',lastWeekly:''};
 const isObj=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
@@ -314,7 +330,8 @@ $('nav').innerHTML=TABS.map(([k,n])=>`<button data-k="${k}" onclick="show('${k}'
 function show(k){document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='t-'+k));
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
  if(k==='stat')renderStat();
- if(k==='gear')renderGear()}
+ if(k==='gear')renderGear();
+ if(k==='exp')renderExp()}
 show('main'); // 열 때는 항상 메인 탭부터
 
 // 숙제
@@ -564,10 +581,18 @@ function renderCal(){
   h+=`<button class="day ${k===today()?'td':''} ${k===calSel?'sel':''}" onclick="calPick('${k}')" aria-label="${m+1}월 ${d}일${rows.length?' 기록 '+rows.length+'건':''}" aria-pressed="${k===calSel}"><span>${d}</span>${lines}${sum}</button>`}
  $('calGrid').innerHTML=h;$('calTitle').textContent=y+'년 '+(m+1)+'월'}
 // 금액 입력: "150만", "1.2억", "1,500,000" 모두 가능 / 빈칸이면 지움(undefined), 이상한 글자면 null
-function parseMoney(s){s=String(s).replace(/[,\s]/g,'');if(!s)return undefined;
- const re=/(\d+(?:\.\d+)?)(억|만|천)?/y,mul={'억':1e8,'만':1e4,'천':1e3,'':1};let t=0,idx=0;
- while(idx<s.length){re.lastIndex=idx;const m=re.exec(s);if(!m)return null;t+=parseFloat(m[1])*mul[m[2]||''];idx=re.lastIndex}
- t=Math.round(t);return (Number.isFinite(t)&&t<=9e15)?t:null}
+// 한국식 단위: 조·억·만(큰 단위) + 천·백·십(작은 단위). 예: "4억3천만", "1억 2천3백45만", "3,000만", "1.2억", "5천", "4억3천만원"
+function parseMoney(s){s=String(s).replace(/[,\s]/g,'').replace(/(원|메소)$/,'');if(!s)return undefined;
+ const re=/(\d+(?:\.\d+)?)?(조|억|만|천|백|십)?/y,BIG={'조':1e12,'억':1e8,'만':1e4},SMALL={'천':1000,'백':100,'십':10};
+ let total=0,small=0,idx=0,any=false;
+ while(idx<s.length){re.lastIndex=idx;const m=re.exec(s);
+  if(!m||m[0]==='')return null; // 알 수 없는 글자
+  const n=m[1]!==undefined?parseFloat(m[1]):null,u=m[2];idx=re.lastIndex;any=true;
+  if(!u){small+=n}                                // 단위 없는 숫자 (예: "4억 3000")
+  else if(SMALL[u]){if(n===null)return null;small+=n*SMALL[u]}   // 천/백/십은 앞에 숫자가 있어야 해요
+  else{const g=small+(n===null?0:n);if(n===null&&small===0)return null;total+=g*BIG[u];small=0}} // 만/억/조: 앞의 작은 값을 묶어서 곱해요 (예: "3천" + "만")
+ if(!any)return null;
+ let t=Math.round(total+small);return (Number.isFinite(t)&&t<=9e15)?t:null}
 function fmtM(n){const a=Math.abs(n),sg=n<0?'-':'';
  const t=x=>String(Math.round(x*10)/10);
  if(!isFinite(a))return '-';
@@ -850,6 +875,69 @@ function gReset(){if(!confirm("'"+charLabel(S.curChar)+"' 캐릭터의 장비 �
  delete gearRoot().byChar[S.curChar];gearS();save();renderGear()}
 function gCharSel(v){if(!S.chars.some(c=>c.id===v))return;S.curChar=v;save();refresh()}
 gearRoot();save(); // 예전 형식 데이터가 있으면 사이트를 열 때 바로 캐릭터별 형식으로 옮겨요
+// ===== 분당 경험치 계산기 (새 탭 전용 코드) =====
+// S.exp = { total, n2, n3 } : 한 타임 총 경험치, 2배/3배 쿠폰 사용 장수 (백업/다른 탭 동기화에도 같이 들어가요)
+const EXP_TIME_MIN=60,EXP_COUPON_MIN=15,EXP_MAX_COUPONS=EXP_TIME_MIN/EXP_COUPON_MIN;
+function expS(){if(!isObj(S.exp))S.exp={};const e=S.exp;
+ if(!Number.isFinite(e.total)||e.total<0)delete e.total;
+ ['n2','n3'].forEach(k=>{if(!Number.isInteger(e[k])||e[k]<0)e[k]=0});
+ if(e.n2>EXP_MAX_COUPONS)e.n2=EXP_MAX_COUPONS;
+ if(e.n2+e.n3>EXP_MAX_COUPONS)e.n3=EXP_MAX_COUPONS-e.n2;
+ return e}
+// 순수 계산. 쿠폰 시간 동안은 2배/3배로 얻었다고 보고, 배율을 시간으로 환산해요.
+//   환산 시간 = (60 - 쿠폰시간) + 2배시간×2 + 3배시간×3 = 60 + 15×(2배 장수) + 30×(3배 장수)
+//   기본 분당 경험치 = 총량 ÷ 환산 시간  (쿠폰을 안 썼으면 총량 ÷ 60)
+function expCalc(total,n2,n3){
+ n2=n2||0;n3=n3||0;
+ if(!Number.isFinite(total)||total<0||!Number.isInteger(n2)||!Number.isInteger(n3)||n2<0||n3<0||n2+n3>EXP_MAX_COUPONS)return null;
+ const t2=n2*EXP_COUPON_MIN,t3=n3*EXP_COUPON_MIN,normal=EXP_TIME_MIN-t2-t3,mult=normal+t2*2+t3*3;
+ const base=total/mult,per60=total/EXP_TIME_MIN;
+ return {total,n2,n3,t2,t3,normal,mult,base,baseRound:Math.round(base),baseExact:Number.isInteger(base),per60,per60Round:Math.round(per60),bonus:total-base*EXP_TIME_MIN}}
+const eNum=x=>Math.round(x).toLocaleString('ko-KR');
+function renderExp(){
+ const e=expS(),t=e.total;
+ $('eTotal').value=t!==undefined?t.toLocaleString('ko-KR'):''; // 입력 중에는 이 함수가 호출되지 않아요(탭을 열 때/다른 탭에서 바뀐 값이 들어올 때만)
+ eBad=false;eLast=JSON.stringify(S.exp);eShow()}
+function eShow(){
+ const e=expS(),t=e.total,used=e.n2+e.n3;
+ $('eN2').textContent=e.n2;$('eN3').textContent=e.n3;
+ $('eCt').textContent='— 15분짜리, 한 타임에 최대 '+EXP_MAX_COUPONS+'장 (지금 '+used*EXP_COUPON_MIN+'분 / '+EXP_TIME_MIN+'분)';
+ $('eM2').disabled=e.n2<=0;$('eM3').disabled=e.n3<=0;
+ $('eP2').disabled=$('eP3').disabled=used>=EXP_MAX_COUPONS;
+ const r=t===undefined?null:expCalc(t,e.n2,e.n3);
+ if(!r){$('eRes').innerHTML=`<div class="small">분당 경험치</div><div style="margin-top:4px">${eBad?'숫자로 입력해 주세요 (예: 3억 6000만)':'경험치 총량을 입력하면 바로 계산돼요.'}</div>`;return}
+ const dec=x=>(Math.round(x*100)/100).toLocaleString('ko-KR');
+ if(used===0){
+  $('eRes').innerHTML=`<div class="small">분당 경험치</div>
+   <div style="font-size:calc(26px*var(--fz));font-weight:bold;margin:4px 0;color:var(--ac)">${eNum(r.base)}</div>
+   <div>${gKR(r.baseRound)} <span class="small">${r.baseExact?'':'(소수점 반올림)'}</span></div>
+   <div class="small" style="margin-top:8px">${r.total.toLocaleString('ko-KR')} ÷ 60 = ${dec(r.base)}</div>`;return}
+ const parts=[`일반 ${r.normal}분`];if(e.n2)parts.push(`2배 ${r.t2}분`);if(e.n3)parts.push(`3배 ${r.t3}분`);
+ $('eRes').innerHTML=`<div class="small">기본 분당 경험치 (쿠폰 효과 제외)</div>
+  <div style="font-size:calc(26px*var(--fz));font-weight:bold;margin:4px 0;color:var(--ac)">${eNum(r.base)}</div>
+  <div>${gKR(r.baseRound)} <span class="small">${r.baseExact?'':'(소수점 반올림)'}</span></div>
+  <div class="small" style="margin-top:10px;line-height:1.8">
+   · 시간 구성: ${parts.join(' + ')} = 60분<br>
+   · 배율을 시간으로 환산: ${r.normal}${e.n2?` + ${r.t2}×2`:''}${e.n3?` + ${r.t3}×3`:''} = <b style="color:var(--tx)">${r.mult}분</b><br>
+   · 계산: ${r.total.toLocaleString('ko-KR')} ÷ ${r.mult} = ${dec(r.base)}<br>
+   · 쿠폰 포함 실제 분당 (총량 ÷ 60): <b style="color:var(--tx)">${eNum(r.per60)}</b> (${gKR(r.per60Round)})<br>
+   · 쿠폰으로 늘어난 경험치: <b class="up">+${gKR(r.bonus)}</b></div>`}
+let eLast='',eBad=false;
+function eIn(el){const raw=el.value,pos=el.selectionStart,left=raw.slice(0,pos).replace(/,/g,'').length;
+ // 숫자만 입력 중이면 콤마를 자동으로 붙여요 (커서 위치 유지). 억/만이 섞이면 그대로 두고 입력 후 정리해요.
+ if(/^[\d,]*$/.test(raw)){const d=raw.replace(/,/g,''),f=d?Number(d).toLocaleString('ko-KR'):'';
+  if(f!==raw){el.value=f;let c=0,i=0;for(;i<f.length&&c<left;i++)if(f[i]!==',')c++;try{el.setSelectionRange(i,i)}catch(x){}}}
+ const v=parseMoney(el.value),e=expS();
+ eBad=v===null;
+ if(v===undefined||v===null)delete e.total;else e.total=v;
+ save();eLast=JSON.stringify(S.exp);eShow()}
+function eFix(el){const t=expS().total;el.value=t!==undefined?t.toLocaleString('ko-KR'):'';eBad=false;eShow()}
+function eStep(k,d){const e=expS();if(k!=='n2'&&k!=='n3')return;
+ const nv=e[k]+d;if(nv<0||e.n2+e.n3+d>EXP_MAX_COUPONS)return;
+ e[k]=nv;save();eLast=JSON.stringify(S.exp);eShow()}
+function eClear(){const e=expS();delete e.total;e.n2=0;e.n3=0;eBad=false;save();$('eTotal').value='';eLast=JSON.stringify(S.exp);eShow();$('eTotal').focus()}
+function eSyncView(){if($('t-exp').classList.contains('on')&&JSON.stringify(S.exp)!==eLast)renderExp()}
+window.addEventListener('storage',eSyncView);window.addEventListener('focus',eSyncView);document.addEventListener('visibilitychange',eSyncView);
 // 다른 탭/창에서 바뀐 데이터가 들어왔을 때 (이 탭이 열려 있으면) 다시 그려요
 function gSyncView(){if($('t-gear').classList.contains('on')&&JSON.stringify(S.gear)!==gLast)renderGear()}
 window.addEventListener('storage',gSyncView);window.addEventListener('focus',gSyncView);document.addEventListener('visibilitychange',gSyncView);
